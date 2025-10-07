@@ -14,6 +14,7 @@ import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import promotionRoutes from './routes/promotionRoutes.js';
+
 import dotenv from 'dotenv';
 dotenv.config(); 
 
