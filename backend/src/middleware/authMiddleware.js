@@ -1,15 +1,15 @@
+// middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import config from '../config';
-
+import config from '../config/config.js'; // Kiểm tra đúng tên trong config
 
 // Protect routes - verify token
-exports.protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
     let token;
 
     // Get token from header or cookie
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies.token) {
       token = req.cookies.token;
@@ -23,7 +23,7 @@ exports.protect = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.JWT_SECRET);
 
     // Get user from token
     const user = await User.findById(decoded.id);
@@ -42,8 +42,8 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    req.user = user;
-    next();
+    req.user = user; // Lưu thông tin user vào request object
+    next(); // Tiến hành vào controller tiếp theo
   } catch (error) {
     return res.status(401).json({
       success: false,
@@ -53,7 +53,7 @@ exports.protect = async (req, res, next) => {
 };
 
 // Restrict to specific roles
-exports.restrictTo = (...roles) => {
+export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
@@ -61,13 +61,13 @@ exports.restrictTo = (...roles) => {
         message: 'Bạn không có quyền thực hiện hành động này'
       });
     }
-    next();
+    next(); // Nếu user có quyền, tiếp tục vào controller tiếp theo
   };
 };
 
 // Generate JWT token
-exports.signToken = (id) => {
-  return jwt.sign({ id }, config.jwtSecret, {
-    expiresIn: config.jwtExpiresIn
+export const signToken = (id) => {
+  return jwt.sign({ id }, config.JWT_SECRET, {
+    expiresIn: config.JWT_EXPIRES_IN
   });
 };

@@ -1,13 +1,13 @@
-const Product = require('../models/Product.js');
+import Product from '../models/Product.js';
 
-// Get all products
-exports.getAllProducts = async (req, res) => {
+// Lấy tất cả sản phẩm
+export const getAllProducts = async (req, res) => {
   try {
     const { page = 1, limit = 12, search, status, minPrice, maxPrice, sort } = req.query;
 
     const query = {};
 
-    // Search by name or model
+    // Tìm kiếm theo tên hoặc mã sản phẩm
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -15,19 +15,19 @@ exports.getAllProducts = async (req, res) => {
       ];
     }
 
-    // Filter by status
+    // Lọc theo trạng thái
     if (status) {
       query.status = status;
     }
 
-    // Filter by price range
+    // Lọc theo khoảng giá
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // Sort
+    // Sắp xếp theo yêu cầu
     let sortOption = { createdAt: -1 };
     if (sort === 'price-asc') sortOption = { price: 1 };
     if (sort === 'price-desc') sortOption = { price: -1 };
@@ -58,11 +58,10 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Get product by ID
-exports.getProductById = async (req, res) => {
+// Lấy sản phẩm theo ID
+export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('createdBy', 'fullName');
+    const product = await Product.findById(req.params.id).populate('createdBy', 'fullName');
 
     if (!product) {
       return res.status(404).json({
@@ -83,8 +82,8 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// Create product (Warehouse Staff)
-exports.createProduct = async (req, res) => {
+// Tạo sản phẩm mới (Nhân viên kho)
+export const createProduct = async (req, res) => {
   try {
     const product = await Product.create({
       ...req.body,
@@ -104,8 +103,8 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Update product (Warehouse Staff, Admin)
-exports.updateProduct = async (req, res) => {
+// Cập nhật sản phẩm (Nhân viên kho, Quản trị viên)
+export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
@@ -133,8 +132,8 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// Delete product (Warehouse Staff)
-exports.deleteProduct = async (req, res) => {
+// Xóa sản phẩm (Nhân viên kho)
+export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
 
@@ -157,8 +156,8 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// Update quantity (Warehouse Staff)
-exports.updateQuantity = async (req, res) => {
+// Cập nhật số lượng sản phẩm (Nhân viên kho)
+export const updateQuantity = async (req, res) => {
   try {
     const { quantity } = req.body;
 

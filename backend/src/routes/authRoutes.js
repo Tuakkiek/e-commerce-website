@@ -1,14 +1,13 @@
 import express from 'express';
-import authController from '../controllers/authController';
-import { protect } from '../middleware/authMiddleware';
+import { register, login, logout, changePassword, getCurrentUser } from '../controllers/authController.js'; // Đảm bảo bạn đã import getCurrentUser
+import { protect } from '../middleware/authMiddleware.js'; // Đảm bảo đúng tên file
 
 const router = express.Router();
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.get('/me', protect, authController.getCurrentUser);
-router.put('/change-password', protect, authController.changePassword);
+router.post('/register', register);
+router.post('/login', login);
+router.post('/logout', logout);
+router.get('/me', protect, getCurrentUser); // Lấy thông tin người dùng thay vì 'getProfile'
+router.put('/change-password', protect, changePassword);
 
 export default router;
-

@@ -1,34 +1,16 @@
+// routes/productRoutes.js
 import express from 'express';
-import productController from '../controllers/product.controller';
-import { protect, restrictTo } from '../middleware/auth.middleware';
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, updateQuantity } from '../controllers/productController.js';  // Import đúng các hàm
+import { protect, restrictTo } from '../middleware/authMiddleware.js';  // Cập nhật đường dẫn đúng
 
 const router = express.Router();
 
-router.get('/', productController.getAllProducts);
-router.get('/:id', productController.getProductById);
+router.get('/', getAllProducts);
+router.get('/:id', getProductById);
 
-router.post('/', 
-  protect, 
-  restrictTo('WAREHOUSE_STAFF', 'ADMIN'), 
-  productController.createProduct
-);
-
-router.put('/:id', 
-  protect, 
-  restrictTo('WAREHOUSE_STAFF', 'ADMIN'), 
-  productController.updateProduct
-);
-
-router.delete('/:id', 
-  protect, 
-  restrictTo('WAREHOUSE_STAFF'), 
-  productController.deleteProduct
-);
-
-router.patch('/:id/quantity', 
-  protect, 
-  restrictTo('WAREHOUSE_STAFF'), 
-  productController.updateQuantity
-);
+router.post('/', protect, restrictTo('WAREHOUSE_STAFF', 'ADMIN'), createProduct);
+router.put('/:id', protect, restrictTo('WAREHOUSE_STAFF', 'ADMIN'), updateProduct);
+router.delete('/:id', protect, restrictTo('WAREHOUSE_STAFF'), deleteProduct);
+router.patch('/:id/quantity', protect, restrictTo('WAREHOUSE_STAFF'), updateQuantity);
 
 export default router;

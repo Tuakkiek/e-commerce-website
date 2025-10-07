@@ -1,3 +1,4 @@
+// models/Cart.js
 import mongoose from "mongoose";
 
 const cartItemSchema = new mongoose.Schema({
@@ -111,6 +112,4 @@ cartSchema.methods.getItemCount = function () {
   return this.items.reduce((count, item) => count + item.quantity, 0);
 };
 
-const Cart = mongoose.model("Cart", cartSchema);
-
-export default Cart;
+export default mongoose.model("Cart", cartSchema);

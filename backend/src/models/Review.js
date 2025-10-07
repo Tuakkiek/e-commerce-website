@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// models/Review.js
+import mongoose from 'mongoose';
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -51,4 +52,4 @@ reviewSchema.post('findOneAndDelete', async function (doc) {
   }
 });
 
-module.exports = mongoose.model('Review', reviewSchema);
+export default mongoose.model('Review', reviewSchema);  // Sử dụng export ESM

@@ -1,6 +1,7 @@
+// routes/reviewRoutes.js
 import express from 'express';
-import { getProductReviews, createReview, updateReview, deleteReview } from '../controllers/review.controller.js';
-import { protect, restrictTo } from '../middleware/auth.middleware.js';
+import { getProductReviews, createReview, updateReview, deleteReview } from '../controllers/reviewController.js';  // Sửa lại tên controller cho đúng
+import { protect, restrictTo } from '../middleware/authMiddleware.js';  // Cập nhật đường dẫn chính xác
 
 const router = express.Router();
 

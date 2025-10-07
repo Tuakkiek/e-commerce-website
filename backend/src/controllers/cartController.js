@@ -1,8 +1,8 @@
-// controllers/cart.controller.js
-const Cart = require("../models/Cart.model");
-const Product = require("../models/Product.model");
+import Cart from "../models/Cart.js";
+import Product from "../models/Product.js";
 
-exports.getCart = async (req, res) => {
+// Lấy giỏ hàng của người dùng
+export const getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ customerId: req.user._id }).populate(
       "items.productId",
@@ -13,13 +13,14 @@ exports.getCart = async (req, res) => {
       cart = await Cart.create({ customerId: req.user._id, items: [] });
     }
 
-    res.json({ success: true, data: { cart } });
+    res.json({ success: true, data: cart });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-exports.addToCart = async (req, res) => {
+// Thêm sản phẩm vào giỏ hàng
+export const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
@@ -67,14 +68,15 @@ exports.addToCart = async (req, res) => {
     res.json({
       success: true,
       message: "Đã thêm vào giỏ hàng",
-      data: { cart },
+      data: cart,
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-exports.updateCartItem = async (req, res) => {
+// Cập nhật sản phẩm trong giỏ hàng
+export const updateCartItem = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
@@ -102,7 +104,7 @@ exports.updateCartItem = async (req, res) => {
     }
 
     if (quantity === 0) {
-      cart.items.splice(itemIndex, 1);
+      cart.items.splice(itemIndex, 1); // Xóa sản phẩm khỏi giỏ hàng nếu số lượng = 0
     } else {
       cart.items[itemIndex].quantity = quantity;
       cart.items[itemIndex].price = product.price;
@@ -113,14 +115,15 @@ exports.updateCartItem = async (req, res) => {
     res.json({
       success: true,
       message: "Cập nhật giỏ hàng thành công",
-      data: { cart },
+      data: cart,
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-exports.removeFromCart = async (req, res) => {
+// Xóa sản phẩm khỏi giỏ hàng
+export const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
     const cart = await Cart.findOne({ customerId: req.user._id });
@@ -139,14 +142,15 @@ exports.removeFromCart = async (req, res) => {
     res.json({
       success: true,
       message: "Đã xóa sản phẩm khỏi giỏ hàng",
-      data: { cart },
+      data: cart,
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-exports.clearCart = async (req, res) => {
+// Xóa toàn bộ giỏ hàng
+export const clearCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ customerId: req.user._id });
     if (!cart) {

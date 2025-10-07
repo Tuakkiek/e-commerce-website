@@ -1,7 +1,8 @@
-// controllers/promotion.controller.js
-const { Promotion } = require('../models/Review.model');
+import Promotion from '../models/Promotion.js';
 
-exports.getAllPromotions = async (req, res) => {
+
+// Lấy tất cả các khuyến mãi
+export const getAllPromotions = async (req, res) => {
   try {
     const promotions = await Promotion.find()
       .populate('applicableProducts', 'name price')
@@ -14,13 +15,14 @@ exports.getAllPromotions = async (req, res) => {
   }
 };
 
-exports.getActivePromotions = async (req, res) => {
+// Lấy khuyến mãi đang hoạt động
+export const getActivePromotions = async (req, res) => {
   try {
     const now = new Date();
     const promotions = await Promotion.find({
       status: 'ACTIVE',
       startDate: { $lte: now },
-      endDate: { $gte: now }
+      endDate: { $gte: now },
     }).populate('applicableProducts', 'name price images');
 
     res.json({ success: true, data: { promotions } });
@@ -29,7 +31,8 @@ exports.getActivePromotions = async (req, res) => {
   }
 };
 
-exports.createPromotion = async (req, res) => {
+// Tạo khuyến mãi mới
+export const createPromotion = async (req, res) => {
   try {
     const promotion = await Promotion.create({ ...req.body, createdBy: req.user._id });
     res.status(201).json({ success: true, message: 'Tạo khuyến mãi thành công', data: { promotion } });
@@ -38,7 +41,8 @@ exports.createPromotion = async (req, res) => {
   }
 };
 
-exports.updatePromotion = async (req, res) => {
+// Cập nhật thông tin khuyến mãi
+export const updatePromotion = async (req, res) => {
   try {
     const promotion = await Promotion.findByIdAndUpdate(
       req.params.id,
@@ -56,7 +60,8 @@ exports.updatePromotion = async (req, res) => {
   }
 };
 
-exports.deletePromotion = async (req, res) => {
+// Xóa khuyến mãi
+export const deletePromotion = async (req, res) => {
   try {
     const promotion = await Promotion.findByIdAndDelete(req.params.id);
     if (!promotion) {

@@ -1,3 +1,5 @@
+// models/Promotion.js
+
 import mongoose from "mongoose";
 
 const promotionSchema = new mongoose.Schema(
@@ -117,6 +119,4 @@ promotionSchema.pre("save", function (next) {
 promotionSchema.index({ status: 1, startDate: 1, endDate: 1 });
 promotionSchema.index({ applicableProducts: 1 });
 
-const Promotion = mongoose.model("Promotion", promotionSchema);
-
-export default Promotion;
+export default mongoose.model("Promotion", promotionSchema);

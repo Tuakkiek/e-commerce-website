@@ -1,17 +1,21 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const config = require('./config');
+// backend/src/server.js
+import { connectDB } from './config/db.js';  // Import connectDB từ db.js
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import config from './config/config.js';  // Đảm bảo import đúng file config.js
 
 // Import routes
-const authRoutes = require('./routes/auth.routes');
-const userRoutes = require('./routes/user.routes');
-const productRoutes = require('./routes/product.routes');
-const cartRoutes = require('./routes/cart.routes');
-const orderRoutes = require('./routes/order.routes');
-const reviewRoutes = require('./routes/review.routes');
-const promotionRoutes = require('./routes/promotion.routes');
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import promotionRoutes from './routes/promotionRoutes.js';
+import dotenv from 'dotenv';
+dotenv.config(); 
 
 const app = express();
 
@@ -24,10 +28,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// MongoDB Connection
-mongoose.connect(config.mongodbConnectionString)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+// Kết nối MongoDB
+connectDB();  // Gọi hàm connectDB để kết nối MongoDB
 
 // Routes
 app.use('/api/auth', authRoutes);

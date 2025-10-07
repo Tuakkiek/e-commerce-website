@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// models/Product.js
+import mongoose from 'mongoose';
 
 const specificationsSchema = new mongoose.Schema({
   color: String,
@@ -109,4 +110,4 @@ productSchema.pre('save', function (next) {
   next();
 });
 
-module.exports = mongoose.model('Product', productSchema);
+export default mongoose.model("Product", productSchema);

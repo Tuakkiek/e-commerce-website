@@ -1,6 +1,7 @@
+// routes/userRoutes.js
 import express from 'express';
-import { updateProfile, addAddress, updateAddress, deleteAddress, getAllEmployees, createEmployee, toggleEmployeeStatus, deleteEmployee } from '../controllers/userController.js';
-import { protect, restrictTo } from '../middleware/authMiddleware.js';
+import { updateProfile, addAddress, updateAddress, deleteAddress, getAllEmployees, createEmployee, toggleEmployeeStatus, deleteEmployee } from '../controllers/userController.js';  // Sửa lại tên controller cho đúng
+import { protect, restrictTo } from '../middleware/authMiddleware.js';  // Đảm bảo đường dẫn đúng
 
 const router = express.Router();
 
