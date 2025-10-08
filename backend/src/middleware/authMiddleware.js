@@ -1,57 +1,17 @@
 // middleware/authMiddleware.js
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
-import config from '../config/config.js'; // Kiểm tra đúng tên trong config
-import dotenv from 'dotenv';
-dotenv.config(); 
 
-// Protect routes - verify token
-export const protect = async (req, res, next) => {
-  try {
-    let token;
-
-    // Get token from header or cookie
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Vui lòng đăng nhập để truy cập'
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, config.JWT_SECRET);
-
-    // Get user from token
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Người dùng không tồn tại'
-      });
-    }
-
-    if (user.status === 'LOCKED') {
-      return res.status(403).json({
-        success: false,
-        message: 'Tài khoản đã bị khóa'
-      });
-    }
-
-    req.user = user; // Lưu thông tin user vào request object
-    next(); // Tiến hành vào controller tiếp theo
-  } catch (error) {
+// Protect routes - chỉ kiểm tra session
+export const protect = (req, res, next) => {
+  // Kiểm tra xem user đã đăng nhập chưa
+  if (!req.session || !req.session.user) {
     return res.status(401).json({
       success: false,
-      message: 'Token không hợp lệ hoặc đã hết hạn'
+      message: 'Vui lòng đăng nhập để truy cập'
     });
   }
+
+  req.user = req.session.user; // Lấy thông tin user từ session
+  next();
 };
 
 // Restrict to specific roles
@@ -63,13 +23,26 @@ export const restrictTo = (...roles) => {
         message: 'Bạn không có quyền thực hiện hành động này'
       });
     }
-    next(); // Nếu user có quyền, tiếp tục vào controller tiếp theo
+    next();
   };
 };
 
-// Generate JWT token
-export const signToken = (id) => {
-  return jwt.sign({ id }, config.JWT_SECRET, {
-    expiresIn: config.JWT_EXPIRES_IN
+// Helper function để tạo session cho user
+export const createSession = (req, user) => {
+  req.session.user = {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    role: user.role
+  };
+};
+
+// Helper function để xóa session
+export const destroySession = (req) => {
+  return new Promise((resolve, reject) => {
+    req.session.destroy((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
   });
 };
