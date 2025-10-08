@@ -7,7 +7,7 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
-router.get('/me', protect, getCurrentUser); // Lấy thông tin người dùng thay vì 'getProfile'
+router.get('/me', protect, getCurrentUser); 
 router.put('/change-password', protect, changePassword);
 
 export default router;
