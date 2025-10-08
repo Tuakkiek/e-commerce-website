@@ -34,34 +34,27 @@ import WarehouseProductsPage from "@/pages/warehouse/ProductsPage";
 // Order Manager Pages
 import OrderManagementPage from "@/pages/order-manager/OrderManagementPage";
 
-// Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user, isLoading } = useAuthStore();
+  const { isAuthenticated, user, rehydrating } = useAuthStore();
 
-  if (isLoading) {
-    return <Loading />;
-  }
+  if (rehydrating) return <Loading />;
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
-  }
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" replace />;
 
   return children;
 };
 
 function App() {
-  const { isAuthenticated, getCurrentUser } = useAuthStore();
+  const {getCurrentUser } = useAuthStore();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token && !isAuthenticated) {
-      getCurrentUser();
-    }
-  }, []);
+  const token = localStorage.getItem("token");
+  if (token) {
+    getCurrentUser(); // store tự kiểm tra user bên trong
+  }
+}, [getCurrentUser]);
 
   return (
     <BrowserRouter>

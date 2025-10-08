@@ -1,5 +1,4 @@
 // FILE: src/store/authStore.js
-// ============================================
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authAPI } from "@/lib/api";
@@ -11,53 +10,28 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      rehydrating: true, // trạng thái đang load từ localStorage
       error: null,
 
       // Login
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authAPI.login(credentials);
-          const { user, token } = response.data;
-          
-          localStorage.setItem("token", token);
-          
+          const { data } = await authAPI.login(credentials);
+          localStorage.setItem("token", data.token);
           set({
-            user,
-            token,
+            user: data.user,
+            token: data.token,
             isAuthenticated: true,
             isLoading: false,
           });
-          
           return { success: true };
-        } catch (error) {
-          const message = error.response?.data?.message || "Đăng nhập thất bại";
-          set({ error: message, isLoading: false });
-          return { success: false, message };
-        }
-      },
-
-      // Register
-      register: async (userData) => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await authAPI.register(userData);
-          const { user, token } = response.data;
-          
-          localStorage.setItem("token", token);
-          
+        } catch (err) {
           set({
-            user,
-            token,
-            isAuthenticated: true,
+            error: err.response?.data?.message || "Đăng nhập thất bại",
             isLoading: false,
           });
-          
-          return { success: true };
-        } catch (error) {
-          const message = error.response?.data?.message || "Đăng ký thất bại";
-          set({ error: message, isLoading: false });
-          return { success: false, message };
+          return { success: false };
         }
       },
 
@@ -65,8 +39,8 @@ export const useAuthStore = create(
       logout: async () => {
         try {
           await authAPI.logout();
-        } catch (error) {
-          console.error("Logout error:", error);
+        } catch (err) {
+          console.error("Logout error:", err);
         } finally {
           localStorage.removeItem("token");
           set({
@@ -77,40 +51,24 @@ export const useAuthStore = create(
         }
       },
 
-      // Get current user
+      // Lấy thông tin user hiện tại
       getCurrentUser: async () => {
         set({ isLoading: true });
         try {
-          const response = await authAPI.getCurrentUser();
-          set({
-            user: response.data.user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
-        } catch (error) {
+          const { data } = await authAPI.getCurrentUser();
+          set({ user: data.user, isAuthenticated: true, isLoading: false });
+        } catch {
+          localStorage.removeItem("token");
           set({
             user: null,
+            token: null,
             isAuthenticated: false,
             isLoading: false,
           });
         }
       },
 
-      // Change password
-      changePassword: async (passwords) => {
-        set({ isLoading: true, error: null });
-        try {
-          await authAPI.changePassword(passwords);
-          set({ isLoading: false });
-          return { success: true };
-        } catch (error) {
-          const message = error.response?.data?.message || "Đổi mật khẩu thất bại";
-          set({ error: message, isLoading: false });
-          return { success: false, message };
-        }
-      },
-
-      // Clear error
+      // Clear lỗi
       clearError: () => set({ error: null }),
     }),
     {
@@ -120,6 +78,9 @@ export const useAuthStore = create(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.rehydrating = false; // đánh dấu đã load xong
+      },
     }
   )
 );

@@ -2,63 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
-  /* Light Mode Color Variables */
   :root {
-    --background: 0 0% 100%; /* White background */
-    --foreground: 222.2 84% 4.9%; /* Dark text color */
-    --card: 0 0% 100%; /* White card */
-    --card-foreground: 222.2 84% 4.9%; /* Dark text on card */
-    --popover: 0 0% 100%; /* White popover */
-    --popover-foreground: 222.2 84% 4.9%; /* Dark text on popover */
-    --primary: 222.2 47.4% 11.2%; /* Primary color (dark blue) */
-    --primary-foreground: 210 40% 98%; /* Light color for primary foreground */
-    --secondary: 210 40% 96.1%; /* Secondary color (light blue) */
-    --secondary-foreground: 222.2 47.4% 11.2%; /* Dark text on secondary */
-    --muted: 210 40% 96.1%; /* Muted color (light blue) */
-    --muted-foreground: 215.4 16.3% 46.9%; /* Muted foreground color */
-    --accent: 210 40% 96.1%; /* Accent color (light blue) */
-    --accent-foreground: 222.2 47.4% 11.2%; /* Dark text on accent */
-    --destructive: 0 84.2% 60.2%; /* Red destructive color */
-    --destructive-foreground: 210 40% 98%; /* Light text for destructive */
-    --border: 214.3 31.8% 91.4%; /* Light border */
-    --input: 214.3 31.8% 91.4%; /* Input field color */
-    --ring: 222.2 84% 4.9%; /* Focus ring color */
-    --radius: 0.5rem; /* Default border radius */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
   }
 
-  /* Dark Mode Color Variables */
   .dark {
-    --background: 222.2 84% 4.9%; /* Dark background */
-    --foreground: 210 40% 98%; /* Light text color */
-    --card: 222.2 84% 4.9%; /* Dark card background */
-    --card-foreground: 210 40% 98%; /* Light text on card */
-    --popover: 222.2 84% 4.9%; /* Dark popover background */
-    --popover-foreground: 210 40% 98%; /* Light text on popover */
-    --primary: 210 40% 98%; /* Light primary color */
-    --primary-foreground: 222.2 47.4% 11.2%; /* Dark primary foreground */
-    --secondary: 217.2 32.6% 17.5%; /* Dark secondary color */
-    --secondary-foreground: 210 40% 98%; /* Light secondary foreground */
-    --muted: 217.2 32.6% 17.5%; /* Dark muted color */
-    --muted-foreground: 215 20.2% 65.1%; /* Muted foreground color */
-    --accent: 217.2 32.6% 17.5%; /* Dark accent color */
-    --accent-foreground: 210 40% 98%; /* Light accent foreground */
-    --destructive: 0 62.8% 30.6%; /* Dark red destructive color */
-    --destructive-foreground: 210 40% 98%; /* Light text for destructive */
-    --border: 217.2 32.6% 17.5%; /* Dark border */
-    --input: 217.2 32.6% 17.5%; /* Dark input field */
-    --ring: 212.7 26.8% 83.9%; /* Dark focus ring color */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 
-  /* Global styles for elements */
-  * {
-    @apply border-border; /* Apply border utility */
-  }
-
-  /* Body background and text color */
   body {
-    @apply bg-background text-foreground; /* Apply background and text color */
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  * {
+    border-color: hsl(var(--border));
   }
 }
-

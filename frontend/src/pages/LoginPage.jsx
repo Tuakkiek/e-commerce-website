@@ -1,20 +1,26 @@
-// ============================================
 // FILE: src/pages/LoginPage.jsx
 // ============================================
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
+import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
-import { useAuthStore } from "@/store/authStore";
-import { LogIn } from "lucide-react";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
-  
+
   const [formData, setFormData] = useState({
     phoneNumber: "",
     password: "",
@@ -30,37 +36,32 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     const result = await login(formData);
-    
+
     if (result.success) {
       const user = useAuthStore.getState().user;
-      
-      // Redirect based on role
-      if (user?.role === "CUSTOMER") {
-        navigate("/");
-      } else if (user?.role === "ADMIN") {
-        navigate("/admin");
-      } else if (user?.role === "WAREHOUSE_STAFF") {
+
+      if (user?.role === "CUSTOMER") navigate("/");
+      else if (user?.role === "ADMIN") navigate("/admin");
+      else if (user?.role === "WAREHOUSE_STAFF")
         navigate("/warehouse/products");
-      } else if (user?.role === "ORDER_MANAGER") {
+      else if (user?.role === "ORDER_MANAGER")
         navigate("/order-manager/orders");
-      }
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background">
+      <div className="w-full max-w-md px-4">
         <Card>
-          <CardHeader className="space-y-1">
-            <div className="flex justify-center mb-4">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center mb-2">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <LogIn className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl text-center">Đăng nhập</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl">Đăng nhập</CardTitle>
+            <CardDescription>
               Nhập số điện thoại và mật khẩu để đăng nhập
             </CardDescription>
           </CardHeader>
@@ -97,7 +98,7 @@ const LoginPage = () => {
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
 

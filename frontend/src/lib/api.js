@@ -1,5 +1,4 @@
 // FILE: src/lib/api.js
-// ============================================
 import axios from "axios";
 
 const api = axios.create({
@@ -14,14 +13,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
@@ -30,8 +25,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Không redirect window.location.href → tránh vòng lặp reload
     }
     return Promise.reject(error);
   }
@@ -39,7 +33,6 @@ api.interceptors.response.use(
 
 export default api;
 
-// API Services
 export const authAPI = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
