@@ -1,62 +1,62 @@
-// src/lib/utils.js
-import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+// frontend/src/lib/utils.js
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price) {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
-}
+export const formatPrice = (price) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+};
 
-export function formatDate(date) {
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(date))
-}
+export const formatDate = (date) => {
+  return new Intl.DateTimeFormat("vi-VN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+};
 
-// src/lib/api.js
-import axios from 'axios'
+export const getStatusColor = (status) => {
+  const colors = {
+    PENDING: "bg-yellow-100 text-yellow-800",
+    CONFIRMED: "bg-blue-100 text-blue-800",
+    PROCESSING: "bg-purple-100 text-purple-800",
+    SHIPPING: "bg-indigo-100 text-indigo-800",
+    DELIVERED: "bg-green-100 text-green-800",
+    CANCELLED: "bg-red-100 text-red-800",
+    ACTIVE: "bg-green-100 text-green-800",
+    LOCKED: "bg-red-100 text-red-800",
+    AVAILABLE: "bg-green-100 text-green-800",
+    OUT_OF_STOCK: "bg-orange-100 text-orange-800",
+    DISCONTINUED: "bg-gray-100 text-gray-800",
+  };
+  return colors[status] || "bg-gray-100 text-gray-800";
+};
 
-const api = axios.create({
-  baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  withCredentials: true
-})
-
-// Add token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Handle response errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
-
-export default api
+export const getStatusText = (status) => {
+  const texts = {
+    PENDING: "Chờ xử lý",
+    CONFIRMED: "Đã xác nhận",
+    PROCESSING: "Đang xử lý",
+    SHIPPING: "Đang giao",
+    DELIVERED: "Đã giao",
+    CANCELLED: "Đã hủy",
+    ACTIVE: "Hoạt động",
+    LOCKED: "Đã khóa",
+    AVAILABLE: "Còn hàng",
+    OUT_OF_STOCK: "Hết hàng",
+    DISCONTINUED: "Ngừng kinh doanh",
+    UNPAID: "Chưa thanh toán",
+    PAID: "Đã thanh toán",
+    COD: "Thanh toán khi nhận hàng",
+    BANK_TRANSFER: "Chuyển khoản",
+  };
+  return texts[status] || status;
+};

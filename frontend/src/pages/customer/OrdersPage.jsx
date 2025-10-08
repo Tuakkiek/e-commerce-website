@@ -1,141 +1,145 @@
-// src/pages/customer/OrdersPage.jsx
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import api from '@/lib/api'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { formatPrice, formatDate } from '@/lib/utils'
-import { Package } from 'lucide-react'
+// ============================================
+// FILE: src/pages/customer/OrdersPage.jsx
+// ============================================
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loading } from "@/components/shared/Loading";
+import { Package, Eye } from "lucide-react";
+import { orderAPI } from "@/lib/api";
+import {
+  formatPrice,
+  formatDate,
+  getStatusColor,
+  getStatusText,
+} from "@/lib/utils";
 
-const statusColors = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  CONFIRMED: 'bg-blue-100 text-blue-800',
-  PROCESSING: 'bg-purple-100 text-purple-800',
-  SHIPPING: 'bg-indigo-100 text-indigo-800',
-  DELIVERED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800'
-}
-
-const statusLabels = {
-  PENDING: 'Chờ xác nhận',
-  CONFIRMED: 'Đã xác nhận',
-  PROCESSING: 'Đang xử lý',
-  SHIPPING: 'Đang giao',
-  DELIVERED: 'Đã giao',
-  CANCELLED: 'Đã hủy'
-}
-
-export default function OrdersPage() {
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+const OrdersPage = () => {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState("");
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders();
+  }, [filter]);
 
   const fetchOrders = async () => {
+    setIsLoading(true);
     try {
-      const { data } = await api.get('/orders/my-orders')
-      setOrders(data.data.orders)
+      const params = filter ? { status: filter } : {};
+      const response = await orderAPI.getMyOrders(params);
+      setOrders(response.data.data.orders);
     } catch (error) {
-      console.error('Error:', error)
+      console.error("Error fetching orders:", error);
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleCancelOrder = async (orderId) => {
-    if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return
-
-    try {
-      await api.post(`/orders/${orderId}/cancel`)
-      alert('Hủy đơn hàng thành công')
-      fetchOrders()
-    } catch (error) {
-      alert(error.response?.data?.message || 'Có lỗi xảy ra')
-    }
-  }
-
-  if (loading) {
-    return <div className="container mx-auto px-4 py-8">Đang tải...</div>
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <Package className="w-24 h-24 mx-auto text-gray-300 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Chưa có đơn hàng nào</h2>
-        <p className="text-gray-600 mb-6">Hãy đặt hàng ngay để trải nghiệm dịch vụ của chúng tôi</p>
-        <Link to="/products">
-          <Button>Mua sắm ngay</Button>
-        </Link>
-      </div>
-    )
+  if (isLoading) {
+    return <Loading />;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Đơn hàng của tôi</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Đơn hàng của tôi</h1>
 
-      <div className="space-y-4">
-        {orders.map((order) => (
-          <Card key={order._id}>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-lg">#{order.orderNumber}</h3>
-                  <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status]}`}>
-                  {statusLabels[order.status]}
-                </span>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                {order.items.map((item, index) => (
-                  <div key={index} className="flex gap-3">
-                    <img
-                      src={item.productId?.images?.[0] || '/placeholder.png'}
-                      alt={item.productName}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{item.productName}</p>
-                      <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
-                    </div>
-                    <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <span className="text-gray-600">Tổng cộng: </span>
-                  <span className="text-xl font-bold text-red-600">
-                    {formatPrice(order.totalAmount)}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  {order.status === 'PENDING' && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleCancelOrder(order._id)}
-                    >
-                      Hủy đơn
-                    </Button>
-                  )}
-                  <Link to={`/orders/${order._id}`}>
-                    <Button variant="outline" size="sm">
-                      Xem chi tiết
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <select
+          className="px-4 py-2 border rounded-md"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <option value="">Tất cả</option>
+          <option value="PENDING">Chờ xử lý</option>
+          <option value="CONFIRMED">Đã xác nhận</option>
+          <option value="PROCESSING">Đang xử lý</option>
+          <option value="SHIPPING">Đang giao</option>
+          <option value="DELIVERED">Đã giao</option>
+          <option value="CANCELLED">Đã hủy</option>
+        </select>
       </div>
+
+      {orders.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <Package className="w-16 h-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Chưa có đơn hàng</h3>
+            <p className="text-muted-foreground mb-6">
+              Bạn chưa có đơn hàng nào
+            </p>
+            <Button onClick={() => navigate("/products")}>Mua sắm ngay</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <Card key={order._id}>
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="font-semibold text-lg mb-1">
+                      Đơn hàng #{order.orderNumber}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <Badge className={getStatusColor(order.status)}>
+                    {getStatusText(order.status)}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  {order.items.slice(0, 2).map((item) => (
+                    <div key={item.productId._id} className="flex gap-3">
+                      <img
+                        src={item.productId?.images?.[0] || "/placeholder.png"}
+                        alt={item.productName}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          SL: {item.quantity} x {formatPrice(item.price)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {order.items.length > 2 && (
+                    <p className="text-sm text-muted-foreground">
+                      Và {order.items.length - 2} sản phẩm khác...
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div>
+                    <span className="text-sm text-muted-foreground">
+                      Tổng tiền:{" "}
+                    </span>
+                    <span className="text-lg font-semibold text-primary">
+                      {formatPrice(order.totalAmount)}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/orders/${order._id}`)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Xem chi tiết
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
-  )
-}
+  );
+};
+
+export default OrdersPage;

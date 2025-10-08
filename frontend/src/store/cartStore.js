@@ -1,72 +1,98 @@
-// src/store/cartStore.js
-import { create } from 'zustand'
-import api from '@/lib/api'
+// FILE: src/store/cartStore.js
+// ============================================
+import { create } from "zustand";
+import { cartAPI } from "@/lib/api";
 
 export const useCartStore = create((set, get) => ({
   cart: null,
-  loading: false,
+  isLoading: false,
+  error: null,
 
-  fetchCart: async () => {
-    set({ loading: true })
+  // Get cart
+  getCart: async () => {
+    set({ isLoading: true, error: null });
     try {
-      const { data } = await api.get('/cart')
-      set({ cart: data.data.cart, loading: false })
+      const response = await cartAPI.get();
+      set({ cart: response.data.data, isLoading: false });
     } catch (error) {
-      set({ loading: false })
-      throw error
+      set({ error: error.response?.data?.message, isLoading: false });
     }
   },
 
-  addToCart: async (productId, quantity) => {
+  // Add to cart
+  addToCart: async (productId, quantity = 1) => {
+    set({ isLoading: true, error: null });
     try {
-      const { data } = await api.post('/cart/add', { productId, quantity })
-      set({ cart: data.data.cart })
-      return data
+      const response = await cartAPI.add({ productId, quantity });
+      set({ cart: response.data.data, isLoading: false });
+      return { success: true, message: response.data.message };
     } catch (error) {
-      throw error
+      const message = error.response?.data?.message || "Thêm vào giỏ hàng thất bại";
+      set({ error: message, isLoading: false });
+      return { success: false, message };
     }
   },
 
+  // Update cart item
   updateCartItem: async (productId, quantity) => {
+    set({ isLoading: true, error: null });
     try {
-      const { data } = await api.put('/cart/update', { productId, quantity })
-      set({ cart: data.data.cart })
-      return data
+      const response = await cartAPI.update({ productId, quantity });
+      set({ cart: response.data.data, isLoading: false });
+      return { success: true };
     } catch (error) {
-      throw error
+      const message = error.response?.data?.message || "Cập nhật giỏ hàng thất bại";
+      set({ error: message, isLoading: false });
+      return { success: false, message };
     }
   },
 
+  // Remove from cart
   removeFromCart: async (productId) => {
+    set({ isLoading: true, error: null });
     try {
-      const { data } = await api.delete(`/cart/remove/${productId}`)
-      set({ cart: data.data.cart })
-      return data
+      const response = await cartAPI.remove(productId);
+      set({ cart: response.data.data, isLoading: false });
+      return { success: true };
     } catch (error) {
-      throw error
+      const message = error.response?.data?.message || "Xóa sản phẩm thất bại";
+      set({ error: message, isLoading: false });
+      return { success: false, message };
     }
   },
 
+  // Clear cart
   clearCart: async () => {
+    set({ isLoading: true, error: null });
     try {
-      await api.delete('/cart/clear')
-      set({ cart: { items: [] } })
+      await cartAPI.clear();
+      set({ cart: { items: [] }, isLoading: false });
+      return { success: true };
     } catch (error) {
-      throw error
+      const message = error.response?.data?.message || "Xóa giỏ hàng thất bại";
+      set({ error: message, isLoading: false });
+      return { success: false, message };
     }
   },
 
-  getCartTotal: () => {
-    const { cart } = get()
-    if (!cart || !cart.items) return 0
+  // Calculate total
+  getTotal: () => {
+    const { cart } = get();
+    if (!cart || !cart.items) return 0;
+    
     return cart.items.reduce((total, item) => {
-      return total + (item.quantity * item.price)
-    }, 0)
+      return total + (item.price * item.quantity);
+    }, 0);
   },
 
-  getCartCount: () => {
-    const { cart } = get()
-    if (!cart || !cart.items) return 0
-    return cart.items.reduce((count, item) => count + item.quantity, 0)
-  }
-}))
+  // Get item count
+  getItemCount: () => {
+    const { cart } = get();
+    if (!cart || !cart.items) return 0;
+    
+    return cart.items.reduce((count, item) => count + item.quantity, 0);
+  },
+
+  // Clear error
+  clearError: () => set({ error: null }),
+}));

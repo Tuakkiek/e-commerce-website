@@ -1,151 +1,179 @@
+// ============================================
+// FILE: src/pages/RegisterPage.jsx
+// ============================================
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { useAuthStore } from "@/store/authStore";
+import { UserPlus } from "lucide-react";
 
-// src/pages/RegisterPage.jsx
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
-export default function RegisterPage() {
-  const navigate = useNavigate()
-  const register = useAuthStore((state) => state.register)
+const RegisterPage = () => {
+  const navigate = useNavigate();
+  const { register, isLoading, error, clearError } = useAuthStore();
+  
   const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    email: '',
-    province: '',
-    password: '',
-    confirmPassword: ''
-  })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+    fullName: "",
+    phoneNumber: "",
+    email: "",
+    province: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [localError, setLocalError] = useState("");
+
+  const handleChange = (e) => {
+    clearError();
+    setLocalError("");
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-
+    e.preventDefault();
+    
+    // Validate
     if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp')
-      return
+      setLocalError("Mật khẩu xác nhận không khớp");
+      return;
     }
 
-    if (formData.phoneNumber.length !== 10) {
-      setError('Số điện thoại phải có 10 chữ số')
-      return
+    if (formData.password.length < 6) {
+      setLocalError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
     }
 
-    setLoading(true)
-
-    try {
-      await register({
-        fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email,
-        province: formData.province,
-        password: formData.password
-      })
-      navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại')
-    } finally {
-      setLoading(false)
+    // Remove confirmPassword before sending
+    const { confirmPassword, ...registerData } = formData;
+    
+    const result = await register(registerData);
+    
+    if (result.success) {
+      navigate("/login");
     }
-  }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Đăng ký</CardTitle>
-          <CardDescription>Tạo tài khoản mới</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                {error}
+    <div className="container mx-auto px-4 py-16">
+      <div className="max-w-md mx-auto">
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <UserPlus className="w-6 h-6 text-primary" />
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Họ và tên</Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                required
-              />
             </div>
+            <CardTitle className="text-2xl text-center">Đăng ký</CardTitle>
+            <CardDescription className="text-center">
+              Tạo tài khoản mới để mua sắm
+            </CardDescription>
+          </CardHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Số điện thoại</Label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                placeholder="0123456789"
-                value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                required
-              />
-            </div>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              {(error || localError) && <ErrorMessage message={error || localError} />}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email (tùy chọn)</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Họ và tên</Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  placeholder="Nguyễn Văn A"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="province">Tỉnh/Thành phố</Label>
-              <Input
-                id="province"
-                value={formData.province}
-                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="0123456789"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email (tùy chọn)</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="province">Tỉnh/Thành phố</Label>
+                <Input
+                  id="province"
+                  name="province"
+                  type="text"
+                  placeholder="Hồ Chí Minh"
+                  value={formData.province}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-            </Button>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Đã có tài khoản?{' '}
-              <Link to="/login" className="text-primary hover:underline">
-                Đăng nhập
-              </Link>
-            </p>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex flex-col space-y-4">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Đang đăng ký..." : "Đăng ký"}
+              </Button>
+
+              <p className="text-sm text-center text-muted-foreground">
+                Đã có tài khoản?{" "}
+                <Link to="/login" className="text-primary hover:underline">
+                  Đăng nhập
+                </Link>
+              </p>
+            </CardFooter>
           </form>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default RegisterPage;

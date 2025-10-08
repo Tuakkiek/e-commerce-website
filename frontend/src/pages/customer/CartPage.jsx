@@ -1,158 +1,159 @@
-// src/pages/customer/CartPage.jsx
-import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useCartStore } from '@/store/cartStore'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { formatPrice } from '@/lib/utils'
-import { Trash2, ShoppingBag } from 'lucide-react'
+// ============================================
+// FILE: src/pages/customer/CartPage.jsx
+// ============================================
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loading } from "@/components/shared/Loading";
+import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/store/cartStore";
+import { formatPrice } from "@/lib/utils";
 
-export default function CartPage() {
-  const navigate = useNavigate()
-  const { cart, fetchCart, updateCartItem, removeFromCart, getCartTotal } = useCartStore()
+const CartPage = () => {
+  const navigate = useNavigate();
+  const { cart, isLoading, getCart, updateCartItem, removeFromCart, getTotal } = useCartStore();
 
   useEffect(() => {
-    fetchCart()
-  }, [])
+    getCart();
+  }, []);
 
   const handleUpdateQuantity = async (productId, newQuantity) => {
-    try {
-      await updateCartItem(productId, newQuantity)
-    } catch (error) {
-      alert(error.response?.data?.message || 'Có lỗi xảy ra')
-    }
-  }
+    await updateCartItem(productId, newQuantity);
+  };
 
   const handleRemove = async (productId) => {
-    if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-      try {
-        await removeFromCart(productId)
-      } catch (error) {
-        alert(error.response?.data?.message || 'Có lỗi xảy ra')
-      }
-    }
+    await removeFromCart(productId);
+  };
+
+  if (isLoading && !cart) {
+    return <Loading />;
   }
 
-  if (!cart || cart.items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <ShoppingBag className="w-24 h-24 mx-auto text-gray-300 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Giỏ hàng trống</h2>
-        <p className="text-gray-600 mb-6">Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
-        <Link to="/products">
-          <Button>Mua sắm ngay</Button>
-        </Link>
-      </div>
-    )
-  }
+  const items = cart?.items || [];
+  const total = getTotal();
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Giỏ hàng của bạn</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {cart.items.map((item) => (
-            <Card key={item._id}>
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <img
-                    src={item.productId.images[0] || '/placeholder.png'}
-                    alt={item.productId.name}
-                    className="w-24 h-24 object-cover rounded"
-                  />
-                  
-                  <div className="flex-1">
-                    <Link 
-                      to={`/products/${item.productId._id}`}
-                      className="font-semibold hover:text-primary"
-                    >
-                      {item.productId.name}
-                    </Link>
-                    <p className="text-red-600 font-bold mt-1">
-                      {formatPrice(item.price)}
-                    </p>
+      {items.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Giỏ hàng trống</h3>
+            <p className="text-muted-foreground mb-6">
+              Bạn chưa có sản phẩm nào trong giỏ hàng
+            </p>
+            <Button onClick={() => navigate("/products")}>
+              Tiếp tục mua sắm
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2 space-y-4">
+            {items.map((item) => (
+              <Card key={item.productId._id}>
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    <img
+                      src={item.productId?.images?.[0] || "/placeholder.png"}
+                      alt={item.productId?.name}
+                      className="w-24 h-24 object-cover rounded-md"
+                    />
 
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center border rounded-md">
-                        <button
-                          className="px-3 py-1 hover:bg-gray-100"
-                          onClick={() => handleUpdateQuantity(item.productId._id, item.quantity - 1)}
-                        >
-                          -
-                        </button>
-                        <span className="px-3 py-1 border-x">{item.quantity}</span>
-                        <button
-                          className="px-3 py-1 hover:bg-gray-100"
-                          onClick={() => handleUpdateQuantity(item.productId._id, item.quantity + 1)}
-                        >
-                          +
-                        </button>
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-1">
+                        {item.productId?.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {formatPrice(item.price)}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center border rounded-md">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.productId._id,
+                                item.quantity + 1
+                              )
+                            }
+                            disabled={item.quantity >= item.productId?.quantity}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <span className="font-semibold">
+                            {formatPrice(item.price * item.quantity)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemove(item.productId._id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-
-                      <button
-                        onClick={() => handleRemove(item.productId._id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                  <div className="text-right">
-                    <p className="font-bold text-lg">
-                      {formatPrice(item.price * item.quantity)}
-                    </p>
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-20">
+              <CardContent className="p-6 space-y-4">
+                <h3 className="text-xl font-semibold">Tóm tắt đơn hàng</h3>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tạm tính</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Phí vận chuyển</span>
+                    <span className="text-green-600">Miễn phí</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between text-lg font-semibold">
+                      <span>Tổng cộng</span>
+                      <span className="text-primary">{formatPrice(total)}</span>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {/* Order Summary */}
-        <div>
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4">Tổng đơn hàng</h3>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between">
-                  <span>Tạm tính:</span>
-                  <span>{formatPrice(getCartTotal())}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Phí vận chuyển:</span>
-                  <span className="text-green-600">Miễn phí</span>
-                </div>
-              </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => navigate("/checkout")}
+                >
+                  Tiến hành thanh toán
+                </Button>
 
-              <div className="border-t pt-4 mb-6">
-                <div className="flex justify-between text-xl font-bold">
-                  <span>Tổng cộng:</span>
-                  <span className="text-red-600">{formatPrice(getCartTotal())}</span>
-                </div>
-              </div>
-
-              <Button 
-                className="w-full" 
-                size="lg"
-                onClick={() => navigate('/checkout')}
-              >
-                Thanh toán
-              </Button>
-
-              <Link to="/products">
-                <Button variant="outline" className="w-full mt-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate("/products")}
+                >
                   Tiếp tục mua sắm
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  )
-}
-      
+  );
+};
+
+export default CartPage;

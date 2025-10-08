@@ -1,38 +1,125 @@
+// FILE: src/store/authStore.js
+// ============================================
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { authAPI } from "@/lib/api";
 
-// src/store/authStore.js
-import { create } from 'zustand'
-import api from '@/lib/api'
+export const useAuthStore = create(
+  persist(
+    (set, get) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
 
-export const useAuthStore = create((set) => ({
-  user: JSON.parse(localStorage.getItem('user')) || null,
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: !!localStorage.getItem('token'),
+      // Login
+      login: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authAPI.login(credentials);
+          const { user, token } = response.data;
+          
+          localStorage.setItem("token", token);
+          
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          
+          return { success: true };
+        } catch (error) {
+          const message = error.response?.data?.message || "Đăng nhập thất bại";
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
 
-  login: async (phoneNumber, password) => {
-    const { data } = await api.post('/auth/login', { phoneNumber, password })
-    localStorage.setItem('token', data.data.token)
-    localStorage.setItem('user', JSON.stringify(data.data.user))
-    set({ user: data.data.user, token: data.data.token, isAuthenticated: true })
-    return data
-  },
+      // Register
+      register: async (userData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authAPI.register(userData);
+          const { user, token } = response.data;
+          
+          localStorage.setItem("token", token);
+          
+          set({
+            user,
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          
+          return { success: true };
+        } catch (error) {
+          const message = error.response?.data?.message || "Đăng ký thất bại";
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
 
-  register: async (userData) => {
-    const { data } = await api.post('/auth/register', userData)
-    localStorage.setItem('token', data.data.token)
-    localStorage.setItem('user', JSON.stringify(data.data.user))
-    set({ user: data.data.user, token: data.data.token, isAuthenticated: true })
-    return data
-  },
+      // Logout
+      logout: async () => {
+        try {
+          await authAPI.logout();
+        } catch (error) {
+          console.error("Logout error:", error);
+        } finally {
+          localStorage.removeItem("token");
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          });
+        }
+      },
 
-  logout: async () => {
-    await api.post('/auth/logout')
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    set({ user: null, token: null, isAuthenticated: false })
-  },
+      // Get current user
+      getCurrentUser: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await authAPI.getCurrentUser();
+          set({
+            user: response.data.user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
+      },
 
-  updateUser: (user) => {
-    localStorage.setItem('user', JSON.stringify(user))
-    set({ user })
-  }
-}))
+      // Change password
+      changePassword: async (passwords) => {
+        set({ isLoading: true, error: null });
+        try {
+          await authAPI.changePassword(passwords);
+          set({ isLoading: false });
+          return { success: true };
+        } catch (error) {
+          const message = error.response?.data?.message || "Đổi mật khẩu thất bại";
+          set({ error: message, isLoading: false });
+          return { success: false, message };
+        }
+      },
+
+      // Clear error
+      clearError: () => set({ error: null }),
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);

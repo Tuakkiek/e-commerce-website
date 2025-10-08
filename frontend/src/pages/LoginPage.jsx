@@ -1,94 +1,118 @@
-// src/pages/LoginPage.jsx
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+// ============================================
+// FILE: src/pages/LoginPage.jsx
+// ============================================
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { useAuthStore } from "@/store/authStore";
+import { LogIn } from "lucide-react";
 
-export default function LoginPage() {
-  const navigate = useNavigate()
-  const login = useAuthStore((state) => state.login)
+const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login, isLoading, error, clearError } = useAuthStore();
+  
   const [formData, setFormData] = useState({
-    phoneNumber: '',
-    password: ''
-  })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+    phoneNumber: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    clearError();
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const result = await login(formData.phoneNumber, formData.password)
-      const userRole = result.data.user.role
-
-      if (userRole === 'CUSTOMER') {
-        navigate('/')
-      } else {
-        navigate('/dashboard')
+    e.preventDefault();
+    
+    const result = await login(formData);
+    
+    if (result.success) {
+      const user = useAuthStore.getState().user;
+      
+      // Redirect based on role
+      if (user?.role === "CUSTOMER") {
+        navigate("/");
+      } else if (user?.role === "ADMIN") {
+        navigate("/admin");
+      } else if (user?.role === "WAREHOUSE_STAFF") {
+        navigate("/warehouse/products");
+      } else if (user?.role === "ORDER_MANAGER") {
+        navigate("/order-manager/orders");
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại')
-    } finally {
-      setLoading(false)
     }
-  }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Đăng nhập</CardTitle>
-          <CardDescription>Đăng nhập vào tài khoản của bạn</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-                {error}
+    <div className="container mx-auto px-4 py-16">
+      <div className="max-w-md mx-auto">
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <LogIn className="w-6 h-6 text-primary" />
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Số điện thoại</Label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                placeholder="0123456789"
-                value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                required
-              />
             </div>
+            <CardTitle className="text-2xl text-center">Đăng nhập</CardTitle>
+            <CardDescription className="text-center">
+              Nhập số điện thoại và mật khẩu để đăng nhập
+            </CardDescription>
+          </CardHeader>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-              />
-            </div>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              {error && <ErrorMessage message={error} />}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-            </Button>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="0123456789"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Chưa có tài khoản?{' '}
-              <Link to="/register" className="text-primary hover:underline">
-                Đăng ký ngay
-              </Link>
-            </p>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex flex-col space-y-4">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+              </Button>
+
+              <p className="text-sm text-center text-muted-foreground">
+                Chưa có tài khoản?{" "}
+                <Link to="/register" className="text-primary hover:underline">
+                  Đăng ký ngay
+                </Link>
+              </p>
+            </CardFooter>
           </form>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default LoginPage;
