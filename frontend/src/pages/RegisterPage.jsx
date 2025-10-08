@@ -6,15 +6,30 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 import { useAuthStore } from "@/store/authStore";
 import { UserPlus } from "lucide-react";
+import { provinces } from "@/province";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register, isLoading, error, clearError } = useAuthStore();
-  
+
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
@@ -37,7 +52,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate
     if (formData.password !== formData.confirmPassword) {
       setLocalError("Mật khẩu xác nhận không khớp");
@@ -51,9 +66,9 @@ const RegisterPage = () => {
 
     // Remove confirmPassword before sending
     const { confirmPassword, ...registerData } = formData;
-    
+
     const result = await register(registerData);
-    
+
     if (result.success) {
       navigate("/login");
     }
@@ -61,8 +76,8 @@ const RegisterPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="max-w-md mx-auto">
-        <Card>
+      <div className="max-w-xl mx-auto">
+        <Card className="border-4">
           <CardHeader className="space-y-1">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -77,7 +92,9 @@ const RegisterPage = () => {
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              {(error || localError) && <ErrorMessage message={error || localError} />}
+              {(error || localError) && (
+                <ErrorMessage message={error || localError} />
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="fullName">Họ và tên</Label>
@@ -119,15 +136,23 @@ const RegisterPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="province">Tỉnh/Thành phố</Label>
-                <Input
-                  id="province"
-                  name="province"
-                  type="text"
-                  placeholder="Hồ Chí Minh"
+                <Select
                   value={formData.province}
-                  onChange={handleChange}
-                  required
-                />
+                  onValueChange={(value) =>
+                    handleChange({ target: { name: "province", value } })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="-- Chọn tỉnh/thành phố --" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    {provinces.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

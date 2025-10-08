@@ -13,6 +13,33 @@ export const useAuthStore = create(
       rehydrating: true, // trạng thái đang load từ localStorage
       error: null,
 
+      // Register
+      register: async (registerData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const { data } = await authAPI.register(registerData);
+          // tùy backend có trả token không, nếu chỉ trả user thì xử lý khác
+          if (data.token) {
+            localStorage.setItem("token", data.token);
+            set({
+              user: data.user,
+              token: data.token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } else {
+            set({ isLoading: false });
+          }
+          return { success: true };
+        } catch (err) {
+          set({
+            error: err.response?.data?.message || "Đăng ký thất bại",
+            isLoading: false,
+          });
+          return { success: false };
+        }
+      },
+
       // Login
       login: async (credentials) => {
         set({ isLoading: true, error: null });

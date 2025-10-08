@@ -52,11 +52,11 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background">
-      <div className="w-full max-w-md px-4">
-        <Card>
+      <div className="w-full max-w-lg px-4">
+        <Card className="border-4">
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center mb-2">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                 <LogIn className="w-6 h-6 text-primary" />
               </div>
             </div>
