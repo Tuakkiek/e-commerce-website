@@ -6,8 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { Loading } from "@/components/shared/Loading";
-import { ArrowRight, Star, Shield, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { productAPI } from "@/lib/api";
+import IPhoneShowcase from "@/components/shared/iPhoneShowcase";
+
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -35,64 +37,32 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              iPhone Store
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Sản phẩm chính hãng - Giá tốt nhất thị trường
-            </p>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => navigate("/products")}
-            >
-              Khám phá ngay
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* Hero Banner 1 - 500px height */}
+      <div className="w-full h-[580px] mb-2.5">
+        <img
+          src="/ip17pm.png"
+          alt="iPhone 17 Pro Max"
+          className="w-full h-full object-cover"
+        />
+      </div>
 
-      {/* Features */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Shield className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Chính hãng 100%</h3>
-              <p className="text-muted-foreground">
-                Sản phẩm chính hãng, bảo hành đầy đủ
-              </p>
-            </div>
+      {/* Hero Banner 2 - 450px height */}
+      <div className="w-full h-[550px] mb-2.5">
+        <img
+          src="/ipAir.png"
+          alt="Banner 2"
+          className="w-full h-full object-cover"
+        />
+      </div>
 
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Truck className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Giao hàng toàn quốc</h3>
-              <p className="text-muted-foreground">
-                Giao hàng nhanh chóng, đảm bảo an toàn
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Star className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Đánh giá cao</h3>
-              <p className="text-muted-foreground">
-                Được khách hàng tin tưởng và yêu thích
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Banner 3 - 450px height */}
+      <div className="w-full h-[550px] mb-2.5">
+        <img
+          src="/ip17.png"
+          alt="Banner 3"
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {/* Featured Products */}
       <section className="py-16">
@@ -112,8 +82,11 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      {/* iPhone Showcase Section */}
+      <IPhoneShowcase />
+
     </div>
   );
 };
 
-export default HomePage;
+export default HomePage;  
