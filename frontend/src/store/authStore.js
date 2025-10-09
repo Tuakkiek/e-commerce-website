@@ -65,7 +65,6 @@ export const useAuthStore = create(
       },
 
       logout: async () => {
-        console.log("Logout called from:", new Error().stack); // Debug nơi gọi logout
         try {
           await authAPI.logout();
         } catch (err) {
@@ -82,32 +81,19 @@ export const useAuthStore = create(
       },
 
       getCurrentUser: async () => {
-        const token = localStorage.getItem("token");
-        console.log("Token before getCurrentUser:", token);
-        if (!token) {
-          console.warn("No token found for getCurrentUser, skipping request");
-          set({ isLoading: false, isAuthenticated: false });
-          return;
-        }
         set({ isLoading: true });
         try {
           const { data } = await authAPI.getCurrentUser();
-          console.log("getCurrentUser response:", data);
           set({ user: data.user, isAuthenticated: true, isLoading: false });
-        } catch (err) {
-          console.error("getCurrentUser error:", err);
-          if (err.response?.status === 401) {
-            console.warn("401 Unauthorized in getCurrentUser, clearing auth state");
-            localStorage.removeItem("token");
-            set({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              isLoading: false,
-            });
-          } else {
-            set({ isLoading: false });
-          }
+        } catch {
+          console.log("Removing token due to failed getCurrentUser");
+          localStorage.removeItem("token");
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
         }
       },
 
