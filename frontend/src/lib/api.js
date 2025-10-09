@@ -9,13 +9,30 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor
+// Request interceptor - Lấy token từ localStorage
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    console.log("Attaching token to request:", token, "for URL:", config.url);
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    else console.warn("No token found for request:", config.url);
+    // Đọc từ localStorage (zustand persist lưu ở đây)
+    const authStorage = localStorage.getItem('auth-storage');
+    
+    if (authStorage) {
+      try {
+        const { state } = JSON.parse(authStorage);
+        const token = state?.token;
+        
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+          console.log("✅ Token attached:", token.substring(0, 20) + "...");
+        } else {
+          console.warn("⚠️ No token found in auth-storage");
+        }
+      } catch (error) {
+        console.error("❌ Error parsing auth-storage:", error);
+      }
+    } else {
+      console.warn("⚠️ auth-storage not found in localStorage");
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
@@ -26,10 +43,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn("401 Unauthorized for request:", error.config.url);
-      // Chỉ xóa token nếu rõ ràng cần đăng xuất (ví dụ, endpoint logout)
-      if (error.config.url.includes("/auth/logout")) {
-        localStorage.removeItem("token");
+      console.warn("🔒 401 Unauthorized - Token invalid or expired");
+      
+      // Chỉ clear storage nếu không phải endpoint login
+      if (!error.config.url.includes("/auth/login")) {
+        localStorage.removeItem("auth-storage");
+        // Redirect to login nếu cần
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -38,8 +60,7 @@ api.interceptors.response.use(
 
 export default api;
 
-// ... (rest of the file remains unchanged)
-
+// AUTH API
 export const authAPI = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
@@ -48,6 +69,7 @@ export const authAPI = {
   changePassword: (data) => api.put("/auth/change-password", data),
 };
 
+// PRODUCT API
 export const productAPI = {
   getAll: (params) => api.get("/products", { params }),
   getById: (id) => api.get(`/products/${id}`),
@@ -57,6 +79,7 @@ export const productAPI = {
   updateQuantity: (id, quantity) => api.patch(`/products/${id}/quantity`, { quantity }),
 };
 
+// CART API
 export const cartAPI = {
   get: () => api.get("/cart"),
   add: (data) => api.post("/cart/add", data),
@@ -65,6 +88,7 @@ export const cartAPI = {
   clear: () => api.delete("/cart/clear"),
 };
 
+// ORDER API
 export const orderAPI = {
   create: (data) => api.post("/orders", data),
   getMyOrders: (params) => api.get("/orders/my-orders", { params }),
@@ -74,6 +98,7 @@ export const orderAPI = {
   cancel: (id) => api.post(`/orders/${id}/cancel`),
 };
 
+// REVIEW API
 export const reviewAPI = {
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
   create: (data) => api.post("/reviews", data),
@@ -81,6 +106,7 @@ export const reviewAPI = {
   delete: (id) => api.delete(`/reviews/${id}`),
 };
 
+// PROMOTION API
 export const promotionAPI = {
   getAll: () => api.get("/promotions"),
   getActive: () => api.get("/promotions/active"),
@@ -89,6 +115,7 @@ export const promotionAPI = {
   delete: (id) => api.delete(`/promotions/${id}`),
 };
 
+// USER API
 export const userAPI = {
   updateProfile: (data) => api.put("/users/profile", data),
   addAddress: (data) => api.post("/users/addresses", data),
