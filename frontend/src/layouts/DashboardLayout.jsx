@@ -2,19 +2,30 @@
 // ============================================
 import React from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
-  ShoppingBag, 
-  Tag, 
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  ShoppingBag,
+  Tag,
   LogOut,
   Menu,
-  X
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -40,13 +51,17 @@ const DashboardLayout = () => {
         { path: "/order-manager/orders", icon: ShoppingBag, label: "Đơn hàng" }
       );
     } else if (user?.role === "WAREHOUSE_STAFF") {
-      items.push(
-        { path: "/warehouse/products", icon: Package, label: "Quản lý sản phẩm" }
-      );
+      items.push({
+        path: "/warehouse/products",
+        icon: Package,
+        label: "Quản lý sản phẩm",
+      });
     } else if (user?.role === "ORDER_MANAGER") {
-      items.push(
-        { path: "/order-manager/orders", icon: ShoppingBag, label: "Quản lý đơn hàng" }
-      );
+      items.push({
+        path: "/order-manager/orders",
+        icon: ShoppingBag,
+        label: "Quản lý đơn hàng",
+      });
     }
 
     return items;
@@ -85,7 +100,7 @@ const DashboardLayout = () => {
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <Link
                   key={item.path}

@@ -1,9 +1,6 @@
-// ============================================
-// FILE: src/layouts/MainLayout.jsx
-// ============================================
 import React from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, LogOut, Package, Menu } from "lucide-react";
+import { ShoppingCart, User, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
@@ -18,6 +15,20 @@ const MainLayout = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/");
+    setMobileMenuOpen(false);
+  };
+
+  const handleProfileNavigation = () => {
+    if (user?.role === "CUSTOMER") {
+      navigate("/profile");
+    } else if (user?.role === "ADMIN") {
+      navigate("/admin");
+    } else if (user?.role === "WAREHOUSE_STAFF") {
+      navigate("/warehouse/products");
+    } else if (user?.role === "ORDER_MANAGER") {
+      navigate("/order-manager/orders");
+    }
+    setMobileMenuOpen(false);
   };
 
   const cartItemCount = getItemCount();
@@ -25,160 +36,137 @@ const MainLayout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <Package className="h-6 w-6" />
-              <span className="font-bold text-xl">iPhone Store</span>
-            </Link>
+      <header className="bg-black text-white py-4 px-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+          {/* Logo */}
+          <Link to="/" className="bg-white rounded-full px-8 py-4 flex items-center justify-center min-w-[180px]">
+            <span className="text-black font-bold text-lg">LOGO</span>
+          </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-                Trang chủ
-              </Link>
-              <Link to="/products" className="text-sm font-medium hover:text-primary transition-colors">
-                Sản phẩm
-              </Link>
-            </nav>
-
-            {/* Right Actions */}
-            <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <>
-                  {user?.role === "CUSTOMER" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative"
-                      onClick={() => navigate("/cart")}
-                    >
-                      <ShoppingCart className="h-5 w-5" />
-                      {cartItemCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                          {cartItemCount}
-                        </Badge>
-                      )}
-                    </Button>
-                  )}
-
-                  <div className="hidden md:flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        if (user?.role === "CUSTOMER") {
-                          navigate("/profile");
-                        } else if (user?.role === "ADMIN") {
-                          navigate("/admin");
-                        } else if (user?.role === "WAREHOUSE_STAFF") {
-                          navigate("/warehouse/products");
-                        } else if (user?.role === "ORDER_MANAGER") {
-                          navigate("/order-manager/orders");
-                        }
-                      }}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      {user?.fullName}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="hidden md:flex items-center space-x-2">
-                  <Button variant="ghost" onClick={() => navigate("/login")}>
-                    Đăng nhập
-                  </Button>
-                  <Button onClick={() => navigate("/register")}>
-                    Đăng ký
-                  </Button>
-                </div>
-              )}
-
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
+          {/* Search Bar */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full bg-white text-black rounded-full py-3 px-6 pr-12 focus:outline-none"
+              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-black w-5 h-5" />
             </div>
           </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-2 border-t">
-              <Link
-                to="/"
-                className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Giỏ hàng */}
+            {isAuthenticated && user?.role === "CUSTOMER" && (
+              <button
+                onClick={() => navigate("/cart")}
+                className="bg-white text-black rounded-full px-6 py-3 flex items-center gap-2 hover:bg-gray-100 transition relative"
               >
-                Trang chủ
-              </Link>
-              <Link
-                to="/products"
-                className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sản phẩm
-              </Link>
+                <ShoppingCart className="w-5 h-5" />
+                <span className="font-medium">Giỏ hàng</span>
+                {cartItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {cartItemCount}
+                  </Badge>
+                )}
+              </button>
+            )}
 
-              {isAuthenticated ? (
-                <>
-                  {user?.role === "CUSTOMER" && (
-                    <>
-                      <Link
-                        to="/cart"
-                        className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Giỏ hàng ({cartItemCount})
-                      </Link>
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Tài khoản
-                      </Link>
-                    </>
-                  )}
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-accent rounded-md"
-                  >
-                    Đăng xuất
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Đăng nhập
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-4 py-2 text-sm hover:bg-accent rounded-md"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Đăng ký
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
+            {/* Tài khoản */}
+            {isAuthenticated ? (
+              <button
+                onClick={handleProfileNavigation}
+                className="bg-white text-black rounded-full px-6 py-3 flex items-center gap-2 hover:bg-gray-100 transition"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">{user?.fullName}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="bg-white text-black rounded-full px-6 py-3 flex items-center gap-2 hover:bg-gray-100 transition"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">Đăng nhập</span>
+              </button>
+            )}
+
+            {/* Danh mục */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="bg-white text-black rounded-full px-6 py-3 flex items-center gap-2 hover:bg-gray-100 transition"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="font-medium">Danh mục</span>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 space-y-2 bg-black border-t border-gray-700">
+            <Link
+              to="/"
+              className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Trang chủ
+            </Link>
+            <Link
+              to="/products"
+              className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Sản phẩm
+            </Link>
+            {isAuthenticated ? (
+              <>
+                {user?.role === "CUSTOMER" && (
+                  <>
+                    <Link
+                      to="/cart"
+                      className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Giỏ hàng ({cartItemCount})
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Tài khoản
+                    </Link>
+                  </>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="block px-4 py-2 text-sm text-white hover:bg-gray-800 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Đăng ký
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -187,10 +175,47 @@ const MainLayout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-6 md:py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center text-sm text-muted-foreground">
-            © 2025 iPhone Store. All rights reserved.
+      <footer className="bg-black text-white py-8 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Logo */}
+            <div className="flex items-start">
+              <div className="bg-white rounded-full px-8 py-4 flex items-center justify-center">
+                <span className="text-black font-bold text-lg">LOGO</span>
+              </div>
+            </div>
+
+            {/* Hệ thống cửa hàng */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">Hệ thống cửa hàng</h3>
+              <ul className="space-y-2 text-sm">
+                <li>CN 1:</li>
+                <li>CN 2:</li>
+                <li>CN 3:</li>
+                <li>CN 4:</li>
+              </ul>
+            </div>
+
+            {/* Chính sách bán hàng */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">Chính sách bán hàng</h3>
+              <ul className="space-y-2 text-sm">
+                <li>Chính sách bảo hành</li>
+                <li>Chính sách mua online</li>
+                <li>Chính sách bảo mật thông tin khách hàng</li>
+              </ul>
+            </div>
+
+            {/* Hotline hỗ trợ */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">Hotline hỗ trợ</h3>
+              <ul className="space-y-2 text-sm">
+                <li>Hotline bán hàng: 0123456789</li>
+                <li>Hotline tư vấn trả góp: 0123456789</li>
+                <li>Hotline bảo hành, kỹ thuật: 0123456789</li>
+                <li>Hotline phản ánh: 0123456789</li>
+              </ul>
+            </div>
           </div>
         </div>
       </footer>

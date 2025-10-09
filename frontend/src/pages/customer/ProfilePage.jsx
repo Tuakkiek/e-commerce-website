@@ -1,6 +1,3 @@
-// ============================================
-// FILE: src/pages/customer/ProfilePage.jsx
-// ============================================
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorMessage } from "@/components/shared/ErrorMessage";
 import { useAuthStore } from "@/store/authStore";
+import { useNavigate } from "react-router-dom";
 import { userAPI } from "@/lib/api";
-import { User, MapPin, Lock } from "lucide-react";
-
+import { User, MapPin, Lock, LogOut } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 const ProfilePage = () => {
   const { user, getCurrentUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
@@ -54,6 +62,8 @@ const ProfilePage = () => {
 
 // Profile Form Component
 const ProfileForm = ({ user, onUpdate }) => {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
@@ -87,6 +97,11 @@ const ProfileForm = ({ user, onUpdate }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
   };
 
   return (
@@ -140,9 +155,47 @@ const ProfileForm = ({ user, onUpdate }) => {
             />
           </div>
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
-          </Button>
+          <div className="flex justify-between items-center">
+            <AlertDialog>
+              {/* 1. KÍCH HOẠT: Nút Đăng xuất */}
+              <AlertDialogTrigger asChild>
+                {/* Nút này sẽ mở Dialog khi được nhấn */}
+                <Button variant="outline" className="flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  Đăng xuất
+                </Button>
+              </AlertDialogTrigger>
+
+              {/* 2. NỘI DUNG POPUP XÁC NHẬN */}
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Bạn có chắc chắn muốn đăng xuất?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Bạn sẽ cần đăng nhập lại để truy cập các tính năng bảo mật
+                    của tài khoản.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <AlertDialogFooter>
+                  {/* Nút HỦY: Đóng popup mà không làm gì */}
+                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+
+                  {/* Nút HÀNH ĐỘNG: Thực hiện đăng xuất */}
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Xác nhận Đăng xuất
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -163,7 +216,8 @@ const AddressesManager = ({ user, onUpdate }) => {
   });
 
   const handleChange = (e) => {
-    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
       [e.target.name]: value,
@@ -187,7 +241,7 @@ const AddressesManager = ({ user, onUpdate }) => {
 
   const handleDelete = async (addressId) => {
     if (!confirm("Bạn có chắc chắn muốn xóa địa chỉ này?")) return;
-    
+
     try {
       await userAPI.deleteAddress(addressId);
       onUpdate();
@@ -221,9 +275,7 @@ const AddressesManager = ({ user, onUpdate }) => {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Địa chỉ của tôi</h3>
-            <Button onClick={() => setIsAdding(true)}>
-              Thêm địa chỉ mới
-            </Button>
+            <Button onClick={() => setIsAdding(true)}>Thêm địa chỉ mới</Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -237,9 +289,7 @@ const AddressesManager = ({ user, onUpdate }) => {
                         {address.phoneNumber}
                       </p>
                     </div>
-                    {address.isDefault && (
-                      <Badge>Mặc định</Badge>
-                    )}
+                    {address.isDefault && <Badge>Mặc định</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     {address.detailAddress}, {address.ward}, {address.province}
@@ -385,7 +435,7 @@ const ChangePasswordForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.newPassword !== formData.confirmPassword) {
       setError("Mật khẩu xác nhận không khớp");
       return;
@@ -412,7 +462,7 @@ const ChangePasswordForm = () => {
     } else {
       setError(result.message);
     }
-    
+
     setIsLoading(false);
   };
 
