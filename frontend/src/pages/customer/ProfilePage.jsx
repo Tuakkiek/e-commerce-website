@@ -1,14 +1,21 @@
+// ============================================
+// FILE: src/pages/customer/ProfilePage.jsx
+// ============================================
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ErrorMessage } from "@/components/shared/ErrorMessage";
-import { useAuthStore } from "@/store/authStore";
-import { useNavigate } from "react-router-dom";
-import { userAPI } from "@/lib/api";
-import { User, MapPin, Lock, LogOut } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,50 +27,350 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { useAuthStore } from "@/store/authStore";
+import { useNavigate } from "react-router-dom";
+import { userAPI, orderAPI } from "@/lib/api";
+import { 
+  User, 
+  MapPin, 
+  Lock, 
+  LogOut, 
+  ShoppingBag,
+  Plus,
+  Pencil,
+  Trash2,
+  Package
+} from "lucide-react";
+import { formatPrice, formatDate, getStatusColor, getStatusText } from "@/lib/utils";
+
 const ProfilePage = () => {
   const { user, getCurrentUser } = useAuthStore();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("orders");
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Tài khoản của tôi</h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="profile">
-            <User className="w-4 h-4 mr-2" />
-            Thông tin cá nhân
-          </TabsTrigger>
-          <TabsTrigger value="addresses">
-            <MapPin className="w-4 h-4 mr-2" />
-            Địa chỉ
-          </TabsTrigger>
-          <TabsTrigger value="password">
-            <Lock className="w-4 h-4 mr-2" />
-            Đổi mật khẩu
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="text-center pb-4 border-b">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <User className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg">{user?.fullName}</h3>
+                <p className="text-sm text-muted-foreground">{user?.phoneNumber}</p>
+              </div>
 
-        <TabsContent value="profile">
-          <ProfileForm user={user} onUpdate={getCurrentUser} />
-        </TabsContent>
+              <nav className="space-y-2">
+                <button
+                  onClick={() => setActiveTab("orders")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "orders"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  <span>Đơn hàng đã mua</span>
+                </button>
 
-        <TabsContent value="addresses">
-          <AddressesManager user={user} onUpdate={getCurrentUser} />
-        </TabsContent>
+                <button
+                  onClick={() => setActiveTab("profile")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "profile"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                  <span>Thông tin cá nhân</span>
+                </button>
 
-        <TabsContent value="password">
-          <ChangePasswordForm />
-        </TabsContent>
-      </Tabs>
+                <button
+                  onClick={() => setActiveTab("addresses")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "addresses"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <MapPin className="w-5 h-5" />
+                  <span>Địa chỉ</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("password")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === "password"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Lock className="w-5 h-5" />
+                  <span>Đổi mật khẩu</span>
+                </button>
+              </nav>
+
+              <div className="pt-4 border-t">
+                <LogoutButton />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          {activeTab === "orders" && <OrdersSection />}
+          {activeTab === "profile" && <ProfileForm user={user} onUpdate={getCurrentUser} />}
+          {activeTab === "addresses" && <AddressesManager user={user} onUpdate={getCurrentUser} />}
+          {activeTab === "password" && <ChangePasswordForm />}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Orders Section Component
+const OrdersSection = () => {
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+
+  React.useEffect(() => {
+    fetchOrders();
+  }, [statusFilter]);
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      };
+      const response = await orderAPI.getMyOrders(params);
+      setOrders(response.data.data.orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewDetail = async (orderId) => {
+    try {
+      const response = await orderAPI.getById(orderId);
+      setSelectedOrder(response.data.data.order);
+      setShowDetailDialog(true);
+    } catch (error) {
+      alert(error.response?.data?.message || "Không thể tải thông tin đơn hàng");
+    }
+  };
+
+  const statusButtons = [
+    { value: "all", label: "Tất cả" },
+    { value: "PENDING", label: "Chờ xử lý" },
+    { value: "CONFIRMED", label: "Đã xác nhận" },
+    { value: "PROCESSING", label: "Đang chuyển hàng" },
+    { value: "SHIPPING", label: "Đang giao hàng" },
+    { value: "DELIVERED", label: "Đã hủy" },
+    { value: "CANCELLED", label: "Thành công" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Đơn hàng đã mua</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Status Filter */}
+          <div className="flex gap-2 overflow-x-auto pb-4 border-b mb-6">
+            {statusButtons.map((btn) => (
+              <Button
+                key={btn.value}
+                variant={statusFilter === btn.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter(btn.value)}
+                className="whitespace-nowrap"
+              >
+                {btn.label}
+              </Button>
+            ))}
+          </div>
+
+          {/* Orders List */}
+          {isLoading ? (
+            <div className="text-center py-8">Đang tải...</div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Chưa có đơn hàng nào</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((order) => (
+                <Card key={order._id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* Order Header */}
+                    <div className="p-4 bg-muted/50 border-b flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Đơn hàng:</p>
+                          <p className="font-semibold">#{order.orderNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Nhận hàng</p>
+                          <p className="font-medium">
+                            {order.shippingAddress?.fullName} ({order.shippingAddress?.phoneNumber})
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className={getStatusColor(order.status)}>
+                        {getStatusText(order.status)}
+                      </Badge>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="p-4 space-y-4">
+                      {order.items?.map((item, index) => (
+                        <div key={index} className="flex items-center gap-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
+                            {item.productId?.images?.[0] ? (
+                              <img
+                                src={item.productId.images[0]}
+                                alt={item.productName}
+                                className="w-full h-full object-cover rounded"
+                              />
+                            ) : (
+                              <Package className="w-8 h-8 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium line-clamp-1">{item.productName}</h4>
+                            <div className="flex items-center gap-4 mt-1">
+                              <p className="text-sm text-muted-foreground">
+                                Số sim: <span className="font-medium">{item.specifications?.storage || "N/A"}</span>
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Gói cước: <span className="font-medium">{item.specifications?.ram || "N/A"}</span>
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Loại sim: <span className="font-medium">{item.specifications?.color || "N/A"}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">Tổng tiền: {formatPrice(item.price * item.quantity)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Order Footer */}
+                    <div className="p-4 bg-muted/50 border-t flex items-center justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetail(order._id)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Order Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chi tiết đơn hàng</DialogTitle>
+            <DialogDescription>Mã đơn: #{selectedOrder?.orderNumber}</DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge className={getStatusColor(selectedOrder.status)}>
+                  {getStatusText(selectedOrder.status)}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(selectedOrder.createdAt)}
+                </p>
+              </div>
+
+              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-semibold">Địa chỉ nhận hàng</h4>
+                <p className="text-sm">{selectedOrder.shippingAddress?.fullName}</p>
+                <p className="text-sm">{selectedOrder.shippingAddress?.phoneNumber}</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedOrder.shippingAddress?.detailAddress},{" "}
+                  {selectedOrder.shippingAddress?.commune},{" "}
+                  {selectedOrder.shippingAddress?.district},{" "}
+                  {selectedOrder.shippingAddress?.province}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {selectedOrder.items?.map((item, index) => (
+                  <div key={index} className="flex gap-4 p-3 border rounded-lg">
+                    <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0">
+                      {item.productId?.images?.[0] ? (
+                        <img
+                          src={item.productId.images[0]}
+                          alt={item.productName}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <Package className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{item.productName}</h4>
+                      <p className="text-sm text-muted-foreground">x{item.quantity}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">{formatPrice(item.price)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between">
+                  <span>Tổng tiền:</span>
+                  <span className="font-bold text-xl text-primary">
+                    {formatPrice(selectedOrder.totalAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Phương thức thanh toán:</span>
+                  <span>{getStatusText(selectedOrder.paymentMethod)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setShowDetailDialog(false)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 // Profile Form Component
 const ProfileForm = ({ user, onUpdate }) => {
-  const { logout } = useAuthStore();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
@@ -97,11 +404,6 @@ const ProfileForm = ({ user, onUpdate }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
   };
 
   return (
@@ -155,47 +457,9 @@ const ProfileForm = ({ user, onUpdate }) => {
             />
           </div>
 
-          <div className="flex justify-between items-center">
-            <AlertDialog>
-              {/* 1. KÍCH HOẠT: Nút Đăng xuất */}
-              <AlertDialogTrigger asChild>
-                {/* Nút này sẽ mở Dialog khi được nhấn */}
-                <Button variant="outline" className="flex items-center gap-2">
-                  <LogOut className="w-4 h-4" />
-                  Đăng xuất
-                </Button>
-              </AlertDialogTrigger>
-
-              {/* 2. NỘI DUNG POPUP XÁC NHẬN */}
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Bạn có chắc chắn muốn đăng xuất?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Bạn sẽ cần đăng nhập lại để truy cập các tính năng bảo mật
-                    của tài khoản.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-
-                <AlertDialogFooter>
-                  {/* Nút HỦY: Đóng popup mà không làm gì */}
-                  <AlertDialogCancel>Hủy</AlertDialogCancel>
-
-                  {/* Nút HÀNH ĐỘNG: Thực hiện đăng xuất */}
-                  <AlertDialogAction
-                    onClick={handleLogout}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
-                    Xác nhận Đăng xuất
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
-            </Button>
-          </div>
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? "Đang cập nhật..." : "Cập nhật thông tin"}
+          </Button>
         </form>
       </CardContent>
     </Card>
@@ -204,7 +468,7 @@ const ProfileForm = ({ user, onUpdate }) => {
 
 // Addresses Manager Component
 const AddressesManager = ({ user, onUpdate }) => {
-  const [isAdding, setIsAdding] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -216,8 +480,7 @@ const AddressesManager = ({ user, onUpdate }) => {
   });
 
   const handleChange = (e) => {
-    const value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
       [e.target.name]: value,
@@ -253,7 +516,7 @@ const AddressesManager = ({ user, onUpdate }) => {
   const handleEdit = (address) => {
     setFormData(address);
     setEditingId(address._id);
-    setIsAdding(true);
+    setShowDialog(true);
   };
 
   const resetForm = () => {
@@ -265,150 +528,138 @@ const AddressesManager = ({ user, onUpdate }) => {
       detailAddress: "",
       isDefault: false,
     });
-    setIsAdding(false);
+    setShowDialog(false);
     setEditingId(null);
   };
 
   return (
-    <div className="space-y-6">
-      {!isAdding ? (
-        <>
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Địa chỉ của tôi</h3>
-            <Button onClick={() => setIsAdding(true)}>Thêm địa chỉ mới</Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user?.addresses?.map((address) => (
-              <Card key={address._id}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-medium">{address.fullName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {address.phoneNumber}
-                      </p>
-                    </div>
-                    {address.isDefault && <Badge>Mặc định</Badge>}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Địa chỉ của tôi</CardTitle>
+          <Button onClick={() => setShowDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm địa chỉ
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {user?.addresses?.map((address) => (
+            <Card key={address._id}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="font-medium">{address.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{address.phoneNumber}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {address.detailAddress}, {address.ward}, {address.province}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(address)}
-                    >
-                      Sửa
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(address._id)}
-                    >
-                      Xóa
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Họ và tên</Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    required
-                  />
+                  {address.isDefault && <Badge>Mặc định</Badge>}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Số điện thoại</Label>
-                  <Input
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    required
-                  />
+                <p className="text-sm text-muted-foreground mb-4">
+                  {address.detailAddress}, {address.ward}, {address.province}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(address)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Sửa
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDelete(address._id)}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Xóa
+                  </Button>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="province">Tỉnh/Thành phố</Label>
-                  <Input
-                    id="province"
-                    name="province"
-                    value={formData.province}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}</DialogTitle>
+          </DialogHeader>
 
-                <div className="space-y-2">
-                  <Label htmlFor="ward">Phường/Xã</Label>
-                  <Input
-                    id="ward"
-                    name="ward"
-                    value={formData.ward}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="detailAddress">Địa chỉ cụ thể</Label>
+                <Label htmlFor="fullName">Họ và tên</Label>
                 <Input
-                  id="detailAddress"
-                  name="detailAddress"
-                  value={formData.detailAddress}
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isDefault"
-                  name="isDefault"
-                  checked={formData.isDefault}
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
                   onChange={handleChange}
-                  className="w-4 h-4"
+                  required
                 />
-                <Label htmlFor="isDefault">Đặt làm địa chỉ mặc định</Label>
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit">
-                  {editingId ? "Cập nhật" : "Thêm địa chỉ"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Hủy
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="province">Tỉnh/Thành phố</Label>
+                <Input
+                  id="province"
+                  name="province"
+                  value={formData.province}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ward">Phường/Xã</Label>
+                <Input
+                  id="ward"
+                  name="ward"
+                  value={formData.ward}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="detailAddress">Địa chỉ cụ thể</Label>
+              <Input
+                id="detailAddress"
+                name="detailAddress"
+                value={formData.detailAddress}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isDefault"
+                name="isDefault"
+                checked={formData.isDefault}
+                onChange={handleChange}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isDefault">Đặt làm địa chỉ mặc định</Label>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={resetForm}>
+                Hủy
+              </Button>
+              <Button type="submit">{editingId ? "Cập nhật" : "Thêm"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 
@@ -516,12 +767,50 @@ const ChangePasswordForm = () => {
             />
           </div>
 
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Đang cập nhật..." : "Đổi mật khẩu"}
           </Button>
         </form>
       </CardContent>
     </Card>
+  );
+};
+
+// Logout Button Component
+const LogoutButton = () => {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline" className="w-full justify-start">
+          <LogOut className="w-4 h-4 mr-2" />
+          Đăng xuất
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Bạn có chắc chắn muốn đăng xuất?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Bạn sẽ cần đăng nhập lại để truy cập các tính năng của tài khoản.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel>Hủy</AlertDialogCancel>
+          <AlertDialogAction onClick={handleLogout} className="bg-red-500 hover:bg-red-600">
+            Xác nhận Đăng xuất
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

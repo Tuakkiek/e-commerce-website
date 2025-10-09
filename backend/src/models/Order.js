@@ -34,12 +34,6 @@ const orderItemSchema = new mongoose.Schema({
   },
 }, { _id: false });
 
-// Method to calculate subtotal for order item
-orderItemSchema.methods.calculateSubtotal = function () {
-  const priceAfterDiscount = this.price * (1 - this.discount / 100);
-  return priceAfterDiscount * this.quantity;
-};
-
 const addressSchema = new mongoose.Schema({
   fullName: {
     type: String,
@@ -98,9 +92,9 @@ const orderSchema = new mongoose.Schema(
   {
     orderNumber: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
+      // BỎ required: true - sẽ tự động generate
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -154,23 +148,26 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// Generate unique order number before saving
-orderSchema.pre("save", async function (next) {
-  if (!this.orderNumber) {
+// Generate unique order number TRƯỚC KHI validate
+orderSchema.pre("validate", async function (next) {
+  // Chỉ generate nếu đang tạo mới VÀ chưa có orderNumber
+  if (this.isNew && !this.orderNumber) {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
     
-    // Find the last order number for today
+    // Tìm đơn hàng cuối cùng trong ngày
     const lastOrder = await mongoose.model("Order").findOne({
       orderNumber: new RegExp(`^ORD${year}${month}${day}`),
     }).sort({ orderNumber: -1 });
     
     let sequence = 1;
-    if (lastOrder) {
+    if (lastOrder && lastOrder.orderNumber) {
       const lastSequence = parseInt(lastOrder.orderNumber.slice(-4));
-      sequence = lastSequence + 1;
+      if (!isNaN(lastSequence)) {
+        sequence = lastSequence + 1;
+      }
     }
     
     this.orderNumber = `ORD${year}${month}${day}${sequence.toString().padStart(4, "0")}`;
@@ -186,7 +183,7 @@ orderSchema.pre("save", function (next) {
       status: this.status,
       updatedBy: this.customerId,
       updatedAt: new Date(),
-      note: "Order created",
+      note: "Đơn hàng được tạo",
     });
   }
   next();
@@ -250,4 +247,4 @@ orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ customerId: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 
-export default mongoose.model("Oders", orderSchema);
+export default mongoose.model("Order", orderSchema);

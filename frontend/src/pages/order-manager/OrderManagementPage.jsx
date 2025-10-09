@@ -1,438 +1,598 @@
-import React, { useState } from 'react';
-import { Search, Filter, Eye, CheckCircle, XCircle, Truck, Package, Clock, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// ============================================
+// FILE: src/pages/order-manager/OrdersPage.jsx
+// ============================================
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Loading } from "@/components/shared/Loading";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import {
+  ShoppingBag,
+  Search,
+  Eye,
+  CheckCircle,
+  Clock,
+  Truck,
+  XCircle,
+  Package,
+  User,
+  MapPin,
+  Phone,
+} from "lucide-react";
+import { orderAPI } from "@/lib/api";
+import { formatPrice, formatDate, getStatusColor, getStatusText } from "@/lib/utils";
 
-const OrderManagementPage = () => {
-  const [orders, setOrders] = useState([
-    {
-      id: 1,
-      orderNumber: 'ORD241001',
-      customerName: 'Nguyễn Văn A',
-      phone: '0123456789',
-      totalAmount: 29990000,
-      status: 'PENDING',
-      paymentMethod: 'COD',
-      createdAt: '2025-10-08 14:30',
-      items: [
-        { name: 'iPhone 15 Pro Max', quantity: 1, price: 29990000 }
-      ],
-      shippingAddress: {
-        fullName: 'Nguyễn Văn A',
-        phoneNumber: '0123456789',
-        province: 'TP. Hồ Chí Minh',
-        district: 'Quận 1',
-        commune: 'Phường Bến Nghé',
-        detailAddress: '123 Đường ABC'
-      }
-    },
-    {
-      id: 2,
-      orderNumber: 'ORD241002',
-      customerName: 'Trần Thị B',
-      phone: '0987654321',
-      totalAmount: 26990000,
-      status: 'CONFIRMED',
-      paymentMethod: 'BANK_TRANSFER',
-      createdAt: '2025-10-08 13:15',
-      items: [
-        { name: 'Samsung Galaxy S24 Ultra', quantity: 1, price: 26990000 }
-      ],
-      shippingAddress: {
-        fullName: 'Trần Thị B',
-        phoneNumber: '0987654321',
-        province: 'Hà Nội',
-        district: 'Quận Hoàn Kiếm',
-        commune: 'Phường Hàng Bạc',
-        detailAddress: '456 Đường XYZ'
-      }
-    },
-    {
-      id: 3,
-      orderNumber: 'ORD241003',
-      customerName: 'Lê Văn C',
-      phone: '0912345678',
-      totalAmount: 19990000,
-      status: 'PROCESSING',
-      paymentMethod: 'COD',
-      createdAt: '2025-10-08 12:00',
-      items: [
-        { name: 'Xiaomi 14 Pro', quantity: 1, price: 19990000 }
-      ],
-      shippingAddress: {
-        fullName: 'Lê Văn C',
-        phoneNumber: '0912345678',
-        province: 'Đà Nẵng',
-        district: 'Quận Hải Châu',
-        commune: 'Phường Thạch Thang',
-        detailAddress: '789 Đường DEF'
-      }
-    },
-    {
-      id: 4,
-      orderNumber: 'ORD241004',
-      customerName: 'Phạm Thị D',
-      phone: '0909090909',
-      totalAmount: 22990000,
-      status: 'SHIPPING',
-      paymentMethod: 'COD',
-      createdAt: '2025-10-07 16:45',
-      items: [
-        { name: 'OPPO Find X7', quantity: 1, price: 22990000 }
-      ],
-      shippingAddress: {
-        fullName: 'Phạm Thị D',
-        phoneNumber: '0909090909',
-        province: 'Cần Thơ',
-        district: 'Quận Ninh Kiều',
-        commune: 'Phường An Hòa',
-        detailAddress: '321 Đường GHI'
-      }
-    },
-    {
-      id: 5,
-      orderNumber: 'ORD241005',
-      customerName: 'Hoàng Văn E',
-      phone: '0898989898',
-      totalAmount: 21990000,
-      status: 'DELIVERED',
-      paymentMethod: 'BANK_TRANSFER',
-      createdAt: '2025-10-06 10:20',
-      items: [
-        { name: 'Vivo X100 Pro', quantity: 1, price: 21990000 }
-      ],
-      shippingAddress: {
-        fullName: 'Hoàng Văn E',
-        phoneNumber: '0898989898',
-        province: 'Huế',
-        district: 'Quận Phú Nhuận',
-        commune: 'Phường Phú Hội',
-        detailAddress: '654 Đường JKL'
-      }
-    }
-  ]);
-
+const OrdersPage = () => {
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [isUpdateStatusDialogOpen, setIsUpdateStatusDialogOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [newStatus, setNewStatus] = useState('');
-  const [statusNote, setStatusNote] = useState('');
-
-  const statusConfig = {
-    PENDING: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
-    PROCESSING: { label: 'Đang xử lý', color: 'bg-purple-100 text-purple-800', icon: Package },
-    SHIPPING: { label: 'Đang giao', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
-    DELIVERED: { label: 'Đã giao', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800', icon: XCircle }
-  };
-
-  const paymentMethodLabels = {
-    COD: 'Thanh toán khi nhận hàng',
-    BANK_TRANSFER: 'Chuyển khoản ngân hàng'
-  };
-
-  const nextStatusOptions = {
-    PENDING: ['CONFIRMED', 'CANCELLED'],
-    CONFIRMED: ['PROCESSING', 'CANCELLED'],
-    PROCESSING: ['SHIPPING', 'CANCELLED'],
-    SHIPPING: ['DELIVERED', 'CANCELLED'],
-    DELIVERED: [],
-    CANCELLED: []
-  };
-
-  const filteredOrders = orders.filter(order => {
-    const matchStatus = filterStatus === 'ALL' || order.status === filterStatus;
-    const matchSearch = order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       order.phone.includes(searchQuery);
-    return matchStatus && matchSearch;
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
   });
 
-  const orderStats = {
-    total: orders.length,
-    pending: orders.filter(o => o.status === 'PENDING').length,
-    processing: orders.filter(o => ['CONFIRMED', 'PROCESSING', 'SHIPPING'].includes(o.status)).length,
-    delivered: orders.filter(o => o.status === 'DELIVERED').length,
-    cancelled: orders.filter(o => o.status === 'CANCELLED').length
+  const [statusUpdate, setStatusUpdate] = useState({
+    status: "",
+    note: "",
+  });
+
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [searchTerm, statusFilter, pagination.currentPage]);
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        page: pagination.currentPage,
+        limit: 20,
+        search: searchTerm || undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      };
+
+      const response = await orderAPI.getAll(params);
+      const { orders, totalPages, currentPage, total } = response.data.data;
+
+      setOrders(orders);
+      setPagination({ currentPage, totalPages, total });
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const openDetailDialog = (order) => {
+  const handleViewDetail = async (orderId) => {
+    try {
+      const response = await orderAPI.getById(orderId);
+      setSelectedOrder(response.data.data.order);
+      setShowDetailDialog(true);
+    } catch (error) {
+      alert(error.response?.data?.message || "Không thể tải thông tin đơn hàng");
+    }
+  };
+
+  const handleOpenStatusDialog = (order) => {
     setSelectedOrder(order);
-    setIsDetailDialogOpen(true);
+    setStatusUpdate({
+      status: getNextStatus(order.status),
+      note: "",
+    });
+    setError("");
+    setShowStatusDialog(true);
   };
 
-  const openUpdateStatusDialog = (order) => {
-    setSelectedOrder(order);
-    setNewStatus('');
-    setStatusNote('');
-    setIsUpdateStatusDialogOpen(true);
+  const getNextStatus = (currentStatus) => {
+    const statusFlow = {
+      PENDING: "CONFIRMED",
+      CONFIRMED: "PROCESSING",
+      PROCESSING: "SHIPPING",
+      SHIPPING: "DELIVERED",
+    };
+    return statusFlow[currentStatus] || currentStatus;
   };
 
-  const handleUpdateStatus = () => {
-    if (!newStatus) {
-      alert('Vui lòng chọn trạng thái mới!');
+  const handleUpdateStatus = async () => {
+    if (!statusUpdate.status) {
+      setError("Vui lòng chọn trạng thái");
       return;
     }
 
-    setOrders(orders.map(order => 
-      order.id === selectedOrder.id 
-        ? { ...order, status: newStatus }
-        : order
-    ));
+    setIsSubmitting(true);
+    setError("");
 
-    console.log('Update order status:', {
-      orderId: selectedOrder.id,
-      newStatus,
-      note: statusNote
-    });
-
-    setIsUpdateStatusDialogOpen(false);
-    alert('Cập nhật trạng thái đơn hàng thành công!');
+    try {
+      await orderAPI.updateStatus(selectedOrder._id, statusUpdate);
+      await fetchOrders();
+      setShowStatusDialog(false);
+    } catch (error) {
+      setError(error.response?.data?.message || "Cập nhật trạng thái thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
+  const getStatusIcon = (status) => {
+    const icons = {
+      PENDING: Clock,
+      CONFIRMED: CheckCircle,
+      PROCESSING: Package,
+      SHIPPING: Truck,
+      DELIVERED: CheckCircle,
+      CANCELLED: XCircle,
+    };
+    return icons[status] || Clock;
   };
+
+  const getOrderStats = () => {
+    const stats = {
+      total: orders.length,
+      pending: orders.filter((o) => o.status === "PENDING").length,
+      processing: orders.filter(
+        (o) => o.status === "CONFIRMED" || o.status === "PROCESSING"
+      ).length,
+      shipping: orders.filter((o) => o.status === "SHIPPING").length,
+      delivered: orders.filter((o) => o.status === "DELIVERED").length,
+    };
+    return stats;
+  };
+
+  if (isLoading && orders.length === 0) {
+    return <Loading />;
+  }
+
+  const stats = getOrderStats();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
-          <p className="text-sm text-gray-600">Theo dõi và xử lý đơn hàng của khách hàng</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Quản lý đơn hàng</h1>
+        <p className="text-muted-foreground">
+          Tổng số: {pagination.total} đơn hàng
+        </p>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">Tổng đơn</div>
-              <div className="text-2xl font-bold text-gray-900">{orderStats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">Chờ xác nhận</div>
-              <div className="text-2xl font-bold text-yellow-600">{orderStats.pending}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">Đang xử lý</div>
-              <div className="text-2xl font-bold text-blue-600">{orderStats.processing}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">Đã giao</div>
-              <div className="text-2xl font-bold text-green-600">{orderStats.delivered}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-500">Đã hủy</div>
-              <div className="text-2xl font-bold text-red-600">{orderStats.cancelled}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Tìm theo mã đơn, tên khách hàng, số điện thoại..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Lọc theo trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="PENDING">Chờ xác nhận</SelectItem>
-                  <SelectItem value="CONFIRMED">Đã xác nhận</SelectItem>
-                  <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
-                  <SelectItem value="SHIPPING">Đang giao</SelectItem>
-                  <SelectItem value="DELIVERED">Đã giao</SelectItem>
-                  <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders Table */}
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Mã đơn</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Khách hàng</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Số điện thoại</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Tổng tiền</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Thanh toán</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Trạng thái</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Thời gian</th>
-                    <th className="text-left py-3 px-4 font-semibold text-sm text-gray-700">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="text-center py-8 text-gray-500">
-                        Không tìm thấy đơn hàng nào
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredOrders.map((order) => {
-                      const StatusIcon = statusConfig[order.status].icon;
-                      return (
-                        <tr key={order.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 font-mono text-sm">{order.orderNumber}</td>
-                          <td className="py-3 px-4">
-                            <div className="font-medium">{order.customerName}</div>
-                          </td>
-                          <td className="py-3 px-4 text-sm">{order.phone}</td>
-                          <td className="py-3 px-4 font-semibold text-sm">{formatCurrency(order.totalAmount)}</td>
-                          <td className="py-3 px-4 text-sm">{paymentMethodLabels[order.paymentMethod]}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig[order.status].color}`}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig[order.status].label}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">{order.createdAt}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDetailDialog(order)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {nextStatusOptions[order.status].length > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openUpdateStatusDialog(order)}
-                                >
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-sm text-muted-foreground">Tổng đơn</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pending}
             </div>
+            <p className="text-sm text-muted-foreground">Chờ xử lý</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.processing}
+            </div>
+            <p className="text-sm text-muted-foreground">Đang xử lý</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-indigo-600">
+              {stats.shipping}
+            </div>
+            <p className="text-sm text-muted-foreground">Đang giao</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {stats.delivered}
+            </div>
+            <p className="text-sm text-muted-foreground">Đã giao</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm mã đơn hàng..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setPagination({ ...pagination, currentPage: 1 });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                <SelectItem value="PENDING">Chờ xử lý</SelectItem>
+                <SelectItem value="CONFIRMED">Đã xác nhận</SelectItem>
+                <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
+                <SelectItem value="SHIPPING">Đang giao</SelectItem>
+                <SelectItem value="DELIVERED">Đã giao</SelectItem>
+                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Orders List */}
+      <div className="space-y-4">
+        {orders.map((order) => {
+          const StatusIcon = getStatusIcon(order.status);
+          return (
+            <Card key={order._id}>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div
+                      className={`w-12 h-12 rounded-full ${
+                        getStatusColor(order.status).split(" ")[0]
+                      } flex items-center justify-center`}
+                    >
+                      <StatusIcon className="w-6 h-6" />
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-semibold text-lg">
+                          #{order.orderNumber}
+                        </h3>
+                        <Badge className={getStatusColor(order.status)}>
+                          {getStatusText(order.status)}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span>{order.customerId?.fullName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span>{order.customerId?.phoneNumber}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <span>{formatDate(order.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {order.shippingAddress?.detailAddress},{" "}
+                          {order.shippingAddress?.commune},{" "}
+                          {order.shippingAddress?.district},{" "}
+                          {order.shippingAddress?.province}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">
+                            Số sản phẩm:{" "}
+                          </span>
+                          <span className="font-semibold">
+                            {order.items?.length}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">
+                            Thanh toán:{" "}
+                          </span>
+                          <span className="font-semibold">
+                            {getStatusText(order.paymentMethod)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-3">
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">
+                        {formatPrice(order.totalAmount)}
+                      </p>
+                      <Badge
+                        variant={
+                          order.paymentStatus === "PAID"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {getStatusText(order.paymentStatus)}
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetail(order._id)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Chi tiết
+                      </Button>
+                      {order.status !== "DELIVERED" &&
+                        order.status !== "CANCELLED" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenStatusDialog(order)}
+                          >
+                            Cập nhật
+                          </Button>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="outline"
+            disabled={pagination.currentPage === 1}
+            onClick={() =>
+              setPagination({
+                ...pagination,
+                currentPage: pagination.currentPage - 1,
+              })
+            }
+          >
+            Trước
+          </Button>
+          <span className="px-4 py-2">
+            Trang {pagination.currentPage} / {pagination.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            disabled={pagination.currentPage === pagination.totalPages}
+            onClick={() =>
+              setPagination({
+                ...pagination,
+                currentPage: pagination.currentPage + 1,
+              })
+            }
+          >
+            Sau
+          </Button>
+        </div>
+      )}
 
       {/* Order Detail Dialog */}
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Chi tiết đơn hàng {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle>Chi tiết đơn hàng</DialogTitle>
             <DialogDescription>
-              Thông tin chi tiết về đơn hàng
+              Mã đơn: #{selectedOrder?.orderNumber}
             </DialogDescription>
           </DialogHeader>
+
           {selectedOrder && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Status Badge */}
+              <div className="flex items-center gap-3">
+                <Badge
+                  className={`${getStatusColor(
+                    selectedOrder.status
+                  )} text-base px-4 py-2`}
+                >
+                  {getStatusText(selectedOrder.status)}
+                </Badge>
+                <Badge
+                  variant={
+                    selectedOrder.paymentStatus === "PAID"
+                      ? "default"
+                      : "secondary"
+                  }
+                  className="text-base px-4 py-2"
+                >
+                  {getStatusText(selectedOrder.paymentStatus)}
+                </Badge>
+              </div>
+
               {/* Customer Info */}
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-3">Thông tin khách hàng</h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-500">Họ tên:</span>
-                    <p className="font-medium">{selectedOrder.customerName}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Số điện thoại:</span>
-                    <p className="font-medium">{selectedOrder.phone}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipping Address */}
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-3">Địa chỉ giao hàng</h3>
-                <div className="text-sm space-y-1">
-                  <p><strong>{selectedOrder.shippingAddress.fullName}</strong> - {selectedOrder.shippingAddress.phoneNumber}</p>
-                  <p>{selectedOrder.shippingAddress.detailAddress}</p>
-                  <p>{selectedOrder.shippingAddress.commune}, {selectedOrder.shippingAddress.district}</p>
-                  <p>{selectedOrder.shippingAddress.province}</p>
-                </div>
-              </div>
-
-              {/* Products */}
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-3">Sản phẩm</h3>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-gray-500">Số lượng: {item.quantity}</p>
-                      </div>
-                      <p className="font-semibold">{formatCurrency(item.price)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Order Summary */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Phương thức thanh toán:</span>
-                    <span className="font-medium">{paymentMethodLabels[selectedOrder.paymentMethod]}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Trạng thái:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[selectedOrder.status].color}`}>
-                      {statusConfig[selectedOrder.status].label}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Thông tin khách hàng
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-semibold">
+                      {selectedOrder.shippingAddress?.fullName}
                     </span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>Tổng cộng:</span>
-                    <span className="text-red-600">{formatCurrency(selectedOrder.totalAmount)}</span>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <span>{selectedOrder.shippingAddress?.phoneNumber}</span>
                   </div>
-                </div>
-              </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
+                    <span>
+                      {selectedOrder.shippingAddress?.detailAddress},{" "}
+                      {selectedOrder.shippingAddress?.commune},{" "}
+                      {selectedOrder.shippingAddress?.district},{" "}
+                      {selectedOrder.shippingAddress?.province}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Order Items */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Sản phẩm</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {selectedOrder.items?.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 pb-4 border-b last:border-0"
+                      >
+                        <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+                          {item.productId?.images?.[0] ? (
+                            <img
+                              src={item.productId.images[0]}
+                              alt={item.productName}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          ) : (
+                            <Package className="w-8 h-8 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{item.productName}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatPrice(item.price)} x {item.quantity}
+                          </p>
+                          {item.discount > 0 && (
+                            <Badge variant="destructive" className="mt-1">
+                              -{item.discount}%
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">
+                            {formatPrice(
+                              item.price *
+                                item.quantity *
+                                (1 - item.discount / 100)
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <div className="flex justify-between text-base">
+                      <span>Tổng cộng:</span>
+                      <span className="font-bold text-xl text-primary">
+                        {formatPrice(selectedOrder.totalAmount)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Status History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Lịch sử đơn hàng</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {selectedOrder.statusHistory?.map((history, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full ${
+                            getStatusColor(history.status).split(" ")[0]
+                          } flex items-center justify-center flex-shrink-0`}
+                        >
+                          {React.createElement(getStatusIcon(history.status), {
+                            className: "w-4 h-4",
+                          })}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className={getStatusColor(history.status)}>
+                              {getStatusText(history.status)}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(history.updatedAt)}
+                            </span>
+                          </div>
+                          {history.note && (
+                            <p className="text-sm text-muted-foreground">
+                              {history.note}
+                            </p>
+                          )}
+                          {history.updatedBy && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Cập nhật bởi: {history.updatedBy.fullName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {selectedOrder.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Ghi chú</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">{selectedOrder.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDetailDialog(false)}
+            >
               Đóng
             </Button>
           </DialogFooter>
@@ -440,51 +600,71 @@ const OrderManagementPage = () => {
       </Dialog>
 
       {/* Update Status Dialog */}
-      <Dialog open={isUpdateStatusDialogOpen} onOpenChange={setIsUpdateStatusDialogOpen}>
+      <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cập nhật trạng thái đơn hàng</DialogTitle>
             <DialogDescription>
-              Đơn hàng: {selectedOrder?.orderNumber}
+              Mã đơn: #{selectedOrder?.orderNumber}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+
+          <div className="space-y-4">
+            {error && <ErrorMessage message={error} />}
+
             <div className="space-y-2">
               <Label>Trạng thái hiện tại</Label>
-              <div className={`px-3 py-2 rounded-lg ${selectedOrder && statusConfig[selectedOrder.status].color}`}>
-                {selectedOrder && statusConfig[selectedOrder.status].label}
+              <div>
+                <Badge className={getStatusColor(selectedOrder?.status)}>
+                  {getStatusText(selectedOrder?.status)}
+                </Badge>
               </div>
             </div>
+
             <div className="space-y-2">
-              <Label>Trạng thái mới *</Label>
-              <Select value={newStatus} onValueChange={setNewStatus}>
+              <Label htmlFor="status">Trạng thái mới *</Label>
+              <Select
+                value={statusUpdate.status}
+                onValueChange={(value) =>
+                  setStatusUpdate({ ...statusUpdate, status: value })
+                }
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn trạng thái mới" />
+                  <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedOrder && nextStatusOptions[selectedOrder.status].map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {statusConfig[status].label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="CONFIRMED">Đã xác nhận</SelectItem>
+                  <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
+                  <SelectItem value="SHIPPING">Đang giao hàng</SelectItem>
+                  <SelectItem value="DELIVERED">Đã giao hàng</SelectItem>
+                  <SelectItem value="CANCELLED">Hủy đơn</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label>Ghi chú</Label>
-              <Input
-                placeholder="Nhập ghi chú (không bắt buộc)"
-                value={statusNote}
-                onChange={(e) => setStatusNote(e.target.value)}
+              <Label htmlFor="note">Ghi chú</Label>
+              <Textarea
+                id="note"
+                placeholder="Nhập ghi chú về cập nhật này..."
+                value={statusUpdate.note}
+                onChange={(e) =>
+                  setStatusUpdate({ ...statusUpdate, note: e.target.value })
+                }
+                rows={3}
               />
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUpdateStatusDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowStatusDialog(false)}
+            >
               Hủy
             </Button>
-            <Button onClick={handleUpdateStatus}>
-              Cập nhật
+            <Button onClick={handleUpdateStatus} disabled={isSubmitting}>
+              {isSubmitting ? "Đang cập nhật..." : "Cập nhật"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -493,4 +673,4 @@ const OrderManagementPage = () => {
   );
 };
 
-export default OrderManagementPage;
+export default OrdersPage;
