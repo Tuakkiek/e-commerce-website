@@ -1,4 +1,3 @@
-// FILE: src/store/authStore.js
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authAPI } from "@/lib/api";
@@ -10,15 +9,13 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
       isLoading: false,
-      rehydrating: true, // trạng thái đang load từ localStorage
+      rehydrating: true,
       error: null,
 
-      // Register
       register: async (registerData) => {
         set({ isLoading: true, error: null });
         try {
           const { data } = await authAPI.register(registerData);
-          // tùy backend có trả token không, nếu chỉ trả user thì xử lý khác
           if (data.token) {
             localStorage.setItem("token", data.token);
             set({
@@ -40,12 +37,16 @@ export const useAuthStore = create(
         }
       },
 
-      // Login
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         try {
           const { data } = await authAPI.login(credentials);
+          console.log("Login response:", data);
+          if (!data.token) {
+            throw new Error("API không trả về token");
+          }
           localStorage.setItem("token", data.token);
+          console.log("Stored token:", localStorage.getItem("token"));
           set({
             user: data.user,
             token: data.token,
@@ -54,21 +55,23 @@ export const useAuthStore = create(
           });
           return { success: true };
         } catch (err) {
+          console.error("Login error:", err);
           set({
-            error: err.response?.data?.message || "Đăng nhập thất bại",
+            error: err.response?.data?.message || err.message || "Đăng nhập thất bại",
             isLoading: false,
           });
           return { success: false };
         }
       },
 
-      // Logout
       logout: async () => {
+        console.log("Logout called from:", new Error().stack); // Debug nơi gọi logout
         try {
           await authAPI.logout();
         } catch (err) {
           console.error("Logout error:", err);
         } finally {
+          console.log("Removing token from localStorage");
           localStorage.removeItem("token");
           set({
             user: null,
@@ -78,24 +81,36 @@ export const useAuthStore = create(
         }
       },
 
-      // Lấy thông tin user hiện tại
       getCurrentUser: async () => {
+        const token = localStorage.getItem("token");
+        console.log("Token before getCurrentUser:", token);
+        if (!token) {
+          console.warn("No token found for getCurrentUser, skipping request");
+          set({ isLoading: false, isAuthenticated: false });
+          return;
+        }
         set({ isLoading: true });
         try {
           const { data } = await authAPI.getCurrentUser();
+          console.log("getCurrentUser response:", data);
           set({ user: data.user, isAuthenticated: true, isLoading: false });
-        } catch {
-          localStorage.removeItem("token");
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
+        } catch (err) {
+          console.error("getCurrentUser error:", err);
+          if (err.response?.status === 401) {
+            console.warn("401 Unauthorized in getCurrentUser, clearing auth state");
+            localStorage.removeItem("token");
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false,
+            });
+          } else {
+            set({ isLoading: false });
+          }
         }
       },
 
-      // Clear lỗi
       clearError: () => set({ error: null }),
     }),
     {
@@ -106,7 +121,7 @@ export const useAuthStore = create(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state) state.rehydrating = false; // đánh dấu đã load xong
+        if (state) state.rehydrating = false;
       },
     }
   )

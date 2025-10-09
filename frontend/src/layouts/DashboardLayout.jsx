@@ -131,9 +131,42 @@ const DashboardLayout = () => {
                   {user?.role === "ORDER_MANAGER" && "Quản lý đơn hàng"}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <AlertDialog>
+                {/* 1. KÍCH HOẠT: Nút Đăng xuất */}
+                <AlertDialogTrigger asChild>
+                  {/* Nút này sẽ mở Dialog khi được nhấn */}
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <LogOut className="w-4 h-4" />
+                    Đăng xuất
+                  </Button>
+                </AlertDialogTrigger>
+
+                {/* 2. NỘI DUNG POPUP XÁC NHẬN */}
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Bạn có chắc chắn muốn đăng xuất?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bạn sẽ cần đăng nhập lại để truy cập các tính năng bảo mật
+                      của tài khoản.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <AlertDialogFooter>
+                    {/* Nút HỦY: Đóng popup mà không làm gì */}
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+
+                    {/* Nút HÀNH ĐỘNG: Thực hiện đăng xuất */}
+                    <AlertDialogAction
+                      onClick={handleLogout}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      Xác nhận Đăng xuất
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>

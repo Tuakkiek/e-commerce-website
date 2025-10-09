@@ -13,7 +13,9 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+    console.log("Attaching token to request:", token, "for URL:", config.url);
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    else console.warn("No token found for request:", config.url);
     return config;
   },
   (error) => Promise.reject(error)
@@ -24,14 +26,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      // Không redirect window.location.href → tránh vòng lặp reload
+      console.warn("401 Unauthorized for request:", error.config.url);
+      // Chỉ xóa token nếu rõ ràng cần đăng xuất (ví dụ, endpoint logout)
+      if (error.config.url.includes("/auth/logout")) {
+        localStorage.removeItem("token");
+      }
     }
     return Promise.reject(error);
   }
 );
 
 export default api;
+
+// ... (rest of the file remains unchanged)
 
 export const authAPI = {
   register: (data) => api.post("/auth/register", data),
