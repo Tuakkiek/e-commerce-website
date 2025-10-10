@@ -144,10 +144,8 @@ const iPhoneShowcase = () => {
       </div>
 
       {/* Hide scrollbar CSS */}
-      <style jsx>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
     </section>
   );

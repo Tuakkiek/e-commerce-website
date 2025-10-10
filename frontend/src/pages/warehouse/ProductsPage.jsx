@@ -58,16 +58,24 @@ const ProductsPage = () => {
     discount: 0,
     quantity: "",
     status: "AVAILABLE",
+    installmentOption: "NONE",
     images: [],
     description: "",
     specifications: {
-      color: "",
+      screenSize: "",
+      cpu: "",
+      operatingSystem: "",
       storage: "",
       ram: "",
-      screen: "",
-      chip: "",
-      camera: "",
+      mainCamera: "",
+      frontCamera: "",
+      colors: "",
+      resolution: "",
+      manufacturer: "",
+      condition: "",
       battery: "",
+      weight: "",
+      dimensions: "",
     },
   });
 
@@ -113,14 +121,24 @@ const ProductsPage = () => {
         status: product.status,
         images: product.images || [],
         description: product.description || "",
-        specifications: product.specifications || {
-          color: "",
-          storage: "",
-          ram: "",
-          screen: "",
-          chip: "",
-          camera: "",
-          battery: "",
+        installmentOption: product.installmentOption || "NONE",
+        specifications: {
+          screenSize: product.specifications?.screenSize || "",
+          cpu: product.specifications?.cpu || "",
+          operatingSystem: product.specifications?.operatingSystem || "",
+          storage: product.specifications?.storage || "",
+          ram: product.specifications?.ram || "",
+          mainCamera: product.specifications?.mainCamera || "",
+          frontCamera: product.specifications?.frontCamera || "",
+          colors: Array.isArray(product.specifications?.colors)
+            ? product.specifications.colors.join(", ")
+            : product.specifications?.colors || "",
+          resolution: product.specifications?.resolution || "",
+          manufacturer: product.specifications?.manufacturer || "",
+          condition: product.specifications?.condition || "",
+          battery: product.specifications?.battery || "",
+          weight: product.specifications?.weight || "",
+          dimensions: product.specifications?.dimensions || "",
         },
       });
     } else {
@@ -135,14 +153,22 @@ const ProductsPage = () => {
         status: "AVAILABLE",
         images: [],
         description: "",
+        installmentOption: "NONE",
         specifications: {
-          color: "",
+          screenSize: "",
+          cpu: "",
+          operatingSystem: "",
           storage: "",
           ram: "",
-          screen: "",
-          chip: "",
-          camera: "",
+          mainCamera: "",
+          frontCamera: "",
+          colors: "",
+          resolution: "",
+          manufacturer: "",
+          condition: "",
           battery: "",
+          weight: "",
+          dimensions: "",
         },
       });
     }
@@ -164,10 +190,15 @@ const ProductsPage = () => {
         },
       });
     } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
+      const next = { ...formData, [name]: value };
+      // Auto-calc discount when price and originalPrice available
+      const op = Number(name === "originalPrice" ? value : next.originalPrice);
+      const p = Number(name === "price" ? value : next.price);
+      if (op > 0 && p >= 0) {
+        const discount = Math.max(0, Math.ceil(((op - p) / op) * 100));
+        next.discount = isFinite(discount) ? discount : 0;
+      }
+      setFormData(next);
     }
   };
 
@@ -202,6 +233,12 @@ const ProductsPage = () => {
         discount: Number(formData.discount),
         quantity: Number(formData.quantity),
         images: formData.images.filter((img) => img.trim() !== ""),
+        specifications: {
+          ...formData.specifications,
+          colors: formData.specifications.colors
+            ? formData.specifications.colors.split(",").map((c) => c.trim()).filter(Boolean)
+            : [],
+        },
       };
 
       if (editingProduct) {
@@ -520,49 +557,108 @@ const ProductsPage = () => {
             {/* Specifications */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">
-                Thông số kỹ thuật
+                Th��ng số kỹ thuật
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  placeholder="Màu sắc"
-                  name="spec_color"
-                  value={formData.specifications.color}
+                  placeholder="Kích thước màn hình (vd: 6.1 inch)"
+                  name="spec_screenSize"
+                  value={formData.specifications.screenSize}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="Bộ nhớ"
-                  name="spec_storage"
-                  value={formData.specifications.storage}
+                  placeholder="CPU/Chip (vd: Apple A18 Bionic)"
+                  name="spec_cpu"
+                  value={formData.specifications.cpu}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="RAM"
+                  placeholder="Hệ điều hành (vd: iOS)"
+                  name="spec_operatingSystem"
+                  value={formData.specifications.operatingSystem}
+                  onChange={handleChange}
+                />
+                {/* Fixed storage options */}
+                <div>
+                  <Label>Dung lượng</Label>
+                  <select
+                    className="w-full border rounded-md px-3 py-2"
+                    name="spec_storage"
+                    value={formData.specifications.storage}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Chọn dung lượng</option>
+                    {[
+                      "64GB",
+                      "128GB",
+                      "256GB",
+                      "512GB",
+                      "1TB",
+                      "2TB",
+                    ].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <Input
+                  placeholder="RAM (vd: 8GB)"
                   name="spec_ram"
                   value={formData.specifications.ram}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="Màn hình"
-                  name="spec_screen"
-                  value={formData.specifications.screen}
+                  placeholder="Camera chính (vd: 48MP - 12MP)"
+                  name="spec_mainCamera"
+                  value={formData.specifications.mainCamera}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="Chip"
-                  name="spec_chip"
-                  value={formData.specifications.chip}
+                  placeholder="Camera trước (vd: 12MP)"
+                  name="spec_frontCamera"
+                  value={formData.specifications.frontCamera}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="Camera"
-                  name="spec_camera"
-                  value={formData.specifications.camera}
+                  placeholder="Màu sắc (nhập danh sách, cách nhau bằng dấu phẩy)"
+                  name="spec_colors"
+                  value={formData.specifications.colors}
                   onChange={handleChange}
                 />
                 <Input
-                  placeholder="Pin"
+                  placeholder="Độ phân giải màn hình (vd: 2556×1179 pixel)"
+                  name="spec_resolution"
+                  value={formData.specifications.resolution}
+                  onChange={handleChange}
+                />
+                <Input
+                  placeholder="Hãng sản xuất (vd: Apple)"
+                  name="spec_manufacturer"
+                  value={formData.specifications.manufacturer}
+                  onChange={handleChange}
+                />
+                <Input
+                  placeholder="Tình trạng SP (vd: New)"
+                  name="spec_condition"
+                  value={formData.specifications.condition}
+                  onChange={handleChange}
+                />
+                <Input
+                  placeholder="Pin (vd: 3200mAh)"
                   name="spec_battery"
                   value={formData.specifications.battery}
+                  onChange={handleChange}
+                />
+                <Input
+                  placeholder="Trọng lượng (vd: 170g)"
+                  name="spec_weight"
+                  value={formData.specifications.weight}
+                  onChange={handleChange}
+                />
+                <Input
+                  placeholder="Kích thước (vd: 146.7 x 71.5 x 7.8 mm)"
+                  name="spec_dimensions"
+                  value={formData.specifications.dimensions}
                   onChange={handleChange}
                 />
               </div>
@@ -601,6 +697,21 @@ const ProductsPage = () => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Installment option */}
+            <div className="space-y-2">
+              <Label>Tuỳ chọn trả góp</Label>
+              <select
+                name="installmentOption"
+                value={formData.installmentOption}
+                onChange={handleChange}
+                className="w-full border rounded-md px-3 py-2"
+              >
+                <option value="NONE">Không áp dụng</option>
+                <option value="ZERO_PERCENT_ZERO_DOWN">Trả góp 0% 0đ</option>
+                <option value="ZERO_PERCENT">Trả góp 0%</option>
+              </select>
             </div>
 
             {/* Description */}

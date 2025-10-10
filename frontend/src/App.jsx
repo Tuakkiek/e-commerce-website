@@ -33,6 +33,7 @@ import WarehouseProductsPage from "@/pages/warehouse/ProductsPage";
 
 // Order Manager Pages
 import OrderManagementPage from "@/pages/order-manager/OrderManagementPage";
+import { Toaster } from "@/components/ui/sonner";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, rehydrating } = useAuthStore();
@@ -150,6 +151,7 @@ function App() {
         {/* 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster position="bottom-right" />
     </BrowserRouter>
   );
 }

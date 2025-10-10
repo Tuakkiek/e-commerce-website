@@ -2,33 +2,13 @@
 // ============================================
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Star } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, getStatusColor, getStatusText } from "@/lib/utils";
-import { useCartStore } from "@/store/cartStore";
-import { useAuthStore } from "@/store/authStore";
 
 export const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const { addToCart } = useCartStore();
-  const { isAuthenticated, user } = useAuthStore();
-
-  const handleAddToCart = async (e) => {
-    e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-
-    if (user?.role !== "CUSTOMER") {
-      return;
-    }
-
-    await addToCart(product._id, 1);
-  };
 
   return (
     <Card 
@@ -51,6 +31,11 @@ export const ProductCard = ({ product }) => {
         >
           {getStatusText(product.status)}
         </Badge>
+        {product.installmentOption && product.installmentOption !== "NONE" && (
+          <Badge className="absolute top-2 left-2 translate-y-8 bg-yellow-500 text-black">
+            {product.installmentOption === "ZERO_PERCENT_ZERO_DOWN" ? "Trả góp 0% 0đ" : "Trả góp 0%"}
+          </Badge>
+        )}
       </div>
 
       <CardContent className="p-4">
@@ -86,16 +71,6 @@ export const ProductCard = ({ product }) => {
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
-        <Button
-          className="w-full"
-          onClick={handleAddToCart}
-          disabled={product.status !== "AVAILABLE" || product.quantity === 0}
-        >
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          Thêm vào giỏ
-        </Button>
-      </CardFooter>
-    </Card>
+          </Card>
   );
 };

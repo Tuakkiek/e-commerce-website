@@ -2,13 +2,20 @@
 import mongoose from 'mongoose';
 
 const specificationsSchema = new mongoose.Schema({
-  color: String,
-  storage: String,
-  ram: String,
-  screen: String,
-  chip: String,
-  camera: String,
-  battery: String,
+  screenSize: String,           // Kích thước màn hình (e.g., "6.1 inch")
+  cpu: String,                  // CPU/Chip (e.g., "Apple A18 Bionic")
+  operatingSystem: String,      // Hệ điều hành (e.g., "iOS")
+  storage: String,              // Bộ nhớ trong (e.g., "128GB")
+  ram: String,                  // RAM (e.g., "8GB")
+  mainCamera: String,           // Camera chính (e.g., "48MP - 12MP")
+  frontCamera: String,          // Camera trước (e.g., "12MP")
+  colors: [String],             // Màu sắc (e.g., ["Black", "White", "Pink", "Blue", "Green"])
+  resolution: String,           // Độ phân giải màn hình (e.g., "2556×1179 pixel")
+  manufacturer: String,         // Hãng sản xuất (e.g., "Apple")
+  condition: String,            // Tình trạng SP (e.g., "New", "Like New", "Used")
+  battery: String,              // Pin (e.g., "3200mAh")
+  weight: String,               // Trọng lượng (e.g., "170g")
+  dimensions: String,           // Kích thước (e.g., "146.7 x 71.5 x 7.8 mm")
 }, { _id: false });
 
 const productSchema = new mongoose.Schema(
@@ -50,6 +57,11 @@ const productSchema = new mongoose.Schema(
       type: String,
       enum: ["AVAILABLE", "OUT_OF_STOCK", "DISCONTINUED"],
       default: "AVAILABLE",
+    },
+    installmentOption: {
+      type: String,
+      enum: ["ZERO_PERCENT_ZERO_DOWN", "ZERO_PERCENT", "NONE"],
+      default: "NONE",
     },
     images: [String],
     description: {

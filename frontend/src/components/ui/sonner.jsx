@@ -12,8 +12,8 @@ const Toaster = ({
       className="toaster group"
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
+          "--normal-bg": "#28a745", // Green background
+          "--normal-text": "#fff", // White text for contrast
           "--normal-border": "var(--border)"
         }
       }

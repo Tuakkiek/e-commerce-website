@@ -1,6 +1,6 @@
 // controllers/reviewController.js
-import pkg from '../models/Review.js';
-const { Review } = pkg; // Sử dụng destructuring để lấy 'Review' từ module
+import Review from '../models/Review.js';
+import Product from '../models/Product.js';
 
 // Lấy tất cả đánh giá của một sản phẩm
 export const getProductReviews = async (req, res) => {

@@ -96,21 +96,21 @@ const HeroBannerCarousel = () => {
       height: 580,
 
       ctaText: "Tìm hiểu thêm",
-      ctaLink: "/products/iphone-17-pro-max",
+      ctaLink: "/products",
     },
     {
       imageSrc: "/ipAir.png",
       alt: "iPhone Air",
       height: 580,
       ctaText: "Khám phá ngay",
-      ctaLink: "/products/iphone-air",
+      ctaLink: "/products",
     },
     {
       imageSrc: "/ip17.png",
       alt: "iPhone 17",
       height: 580,
       ctaText: "Xem chi tiết",
-      ctaLink: "/products/iphone-17",
+      ctaLink: "/products",
     },
   ];
 
