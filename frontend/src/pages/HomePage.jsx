@@ -9,7 +9,7 @@ import { Loading } from "@/components/shared/Loading";
 import { ArrowRight } from "lucide-react";
 import { productAPI } from "@/lib/api";
 import IPhoneShowcase from "@/components/shared/iPhoneShowcase";
-
+import { HeroBannerCarousel } from "@/components/shared/HeroBanner";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -37,32 +37,8 @@ const HomePage = () => {
 
   return (
     <div>
-      {/* Hero Banner 1 - 500px height */}
-      <div className="w-full h-[580px] mb-2.5">
-        <img
-          src="/ip17pm.png"
-          alt="iPhone 17 Pro Max"
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      {/* Hero Banner 2 - 450px height */}
-      <div className="w-full h-[550px] mb-2.5">
-        <img
-          src="/ipAir.png"
-          alt="Banner 2"
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      {/* Hero Banner 3 - 450px height */}
-      <div className="w-full h-[550px] mb-2.5">
-        <img
-          src="/ip17.png"
-          alt="Banner 3"
-          className="w-full h-full object-cover"
-        />
-      </div>
+      {/* Hero Banner */}
+      <HeroBannerCarousel />
 
       {/* Featured Products */}
       <section className="py-16">
@@ -84,9 +60,8 @@ const HomePage = () => {
       </section>
       {/* iPhone Showcase Section */}
       <IPhoneShowcase />
-
     </div>
   );
 };
 
-export default HomePage;  
+export default HomePage;
