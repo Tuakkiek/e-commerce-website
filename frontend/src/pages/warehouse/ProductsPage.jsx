@@ -60,6 +60,7 @@ const ProductsPage = () => {
     status: "AVAILABLE",
     installmentOption: "NONE",
     images: [],
+     variants: [],
     description: "",
     specifications: {
       screenSize: "",
@@ -120,6 +121,7 @@ const ProductsPage = () => {
         quantity: product.quantity,
         status: product.status,
         images: product.images || [],
+        variants: product.variants || [],
         description: product.description || "",
         installmentOption: product.installmentOption || "NONE",
         specifications: {
@@ -152,6 +154,7 @@ const ProductsPage = () => {
         quantity: "",
         status: "AVAILABLE",
         images: [],
+        variants: [],
         description: "",
         installmentOption: "NONE",
         specifications: {
@@ -220,6 +223,29 @@ const ProductsPage = () => {
     setFormData({ ...formData, images: newImages });
   };
 
+  // Variant handlers
+  const addVariant = () => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: [...(prev.variants || []), { storage: "", color: "", price: "", originalPrice: "", stock: "" }],
+    }));
+  };
+
+  const removeVariant = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateVariantField = (index, field, value) => {
+    setFormData((prev) => {
+      const variants = [...(prev.variants || [])];
+      variants[index] = { ...variants[index], [field]: value };
+      return { ...prev, variants };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -239,6 +265,23 @@ const ProductsPage = () => {
             ? formData.specifications.colors.split(",").map((c) => c.trim()).filter(Boolean)
             : [],
         },
+        variants: (formData.variants || [])
+          .map((v) => {
+            const originalPrice = v.originalPrice ? Number(v.originalPrice) : undefined;
+            const price = Number(v.price);
+            const discount = originalPrice && originalPrice > 0
+              ? Math.max(0, Math.round(((originalPrice - price) / originalPrice) * 100))
+              : undefined;
+            return {
+              storage: (v.storage || "").trim(),
+              color: (v.color || "").trim(),
+              price,
+              originalPrice,
+              discount,
+              stock: v.stock ? Number(v.stock) : 0,
+            };
+          })
+          .filter((v) => v.storage && v.color && Number.isFinite(v.price) && v.price > 0),
       };
 
       if (editingProduct) {
@@ -446,7 +489,7 @@ const ProductsPage = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
@@ -557,7 +600,7 @@ const ProductsPage = () => {
             {/* Specifications */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">
-                Th��ng số kỹ thuật
+                Thông số kỹ thuật
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
@@ -578,28 +621,26 @@ const ProductsPage = () => {
                   value={formData.specifications.operatingSystem}
                   onChange={handleChange}
                 />
-                {/* Fixed storage options */}
+                {/* Storage with free typing + presets via datalist */}
                 <div>
                   <Label>Dung lượng</Label>
-                  <select
+                  <input
+                    list="storage-presets"
                     className="w-full border rounded-md px-3 py-2"
                     name="spec_storage"
                     value={formData.specifications.storage}
                     onChange={handleChange}
+                    placeholder="vd: 256GB"
                     required
-                  >
-                    <option value="">Chọn dung lượng</option>
-                    {[
-                      "64GB",
-                      "128GB",
-                      "256GB",
-                      "512GB",
-                      "1TB",
-                      "2TB",
-                    ].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                  />
+                  <datalist id="storage-presets">
+                    <option value="64GB" />
+                    <option value="128GB" />
+                    <option value="256GB" />
+                    <option value="512GB" />
+                    <option value="1TB" />
+                    <option value="2TB" />
+                  </datalist>
                 </div>
                 <Input
                   placeholder="RAM (vd: 8GB)"
@@ -661,6 +702,75 @@ const ProductsPage = () => {
                   value={formData.specifications.dimensions}
                   onChange={handleChange}
                 />
+              </div>
+            </div>
+
+            {/* Variants: price per dung lượng + màu sắc */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Giá theo dung lượng & màu sắc</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                  <Plus className="w-4 h-4 mr-2" /> Thêm biến thể
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(formData.variants || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">Chưa có biến thể nào. Thêm ít nhất một biến thể dung lượng + màu sắc.</p>
+                )}
+                {(formData.variants || []).map((v, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                    <div className="md:col-span-3">
+                      <Label className="text-sm">Dung lượng</Label>
+                      <input
+                        list="storage-presets"
+                        className="w-full border rounded-md px-3 py-2"
+                        value={v.storage || ""}
+                        onChange={(e) => updateVariantField(idx, 'storage', e.target.value)}
+                        placeholder="vd: 256GB"
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <Label className="text-sm">Màu sắc</Label>
+                      <Input
+                        value={v.color || ""}
+                        onChange={(e) => updateVariantField(idx, 'color', e.target.value)}
+                        placeholder="vd: Đen, Trắng..."
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-sm">Giá gốc</Label>
+                      <Input
+                        type="number"
+                        value={v.originalPrice || ""}
+                        onChange={(e) => updateVariantField(idx, 'originalPrice', e.target.value)}
+                        placeholder="Giá gốc"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-sm">Giá bán</Label>
+                      <Input
+                        type="number"
+                        value={v.price || ""}
+                        onChange={(e) => updateVariantField(idx, 'price', e.target.value)}
+                        placeholder="Giá bán"
+                      />
+                    </div>
+                    <div className="md:col-span-1">
+                      <Label className="text-sm">Tồn kho</Label>
+                      <Input
+                        type="number"
+                        value={v.stock || ""}
+                        onChange={(e) => updateVariantField(idx, 'stock', e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="md:col-span-1 flex">
+                      <Button type="button" variant="outline" size="icon" className="mt-auto" onClick={() => removeVariant(idx)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

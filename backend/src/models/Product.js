@@ -18,6 +18,16 @@ const specificationsSchema = new mongoose.Schema({
   dimensions: String,           // Kích thước (e.g., "146.7 x 71.5 x 7.8 mm")
 }, { _id: false });
 
+// Variant schema: price per storage and color
+const variantSchema = new mongoose.Schema({
+  storage: { type: String, required: true, trim: true },
+  color: { type: String, required: true, trim: true },
+  price: { type: Number, required: true, min: 0 },
+  originalPrice: { type: Number, min: 0 },
+  discount: { type: Number, min: 0, max: 100 },
+  stock: { type: Number, default: 0, min: 0 },
+}, { _id: false });
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -31,6 +41,8 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
     specifications: specificationsSchema,
+    // Per-variant pricing (storage + color)
+    variants: [variantSchema],
     price: {
       type: Number,
       required: true,
@@ -114,11 +126,33 @@ productSchema.methods.updateRating = async function () {
 
 // Auto-update status based on quantity
 productSchema.pre('save', function (next) {
+  // Auto status from quantity
   if (this.quantity === 0) {
     this.status = 'OUT_OF_STOCK';
   } else if (this.status === 'OUT_OF_STOCK' && this.quantity > 0) {
     this.status = 'AVAILABLE';
   }
+
+  // Derive main price from variants if available (use lowest variant price)
+  if (Array.isArray(this.variants) && this.variants.length > 0) {
+    const prices = this.variants
+      .map(v => typeof v.price === 'number' ? v.price : NaN)
+      .filter(p => Number.isFinite(p));
+    if (prices.length > 0) {
+      const minPrice = Math.min(...prices);
+      this.price = minPrice;
+      // If originalPrice missing or lower than price, set to price to keep valid
+      if (typeof this.originalPrice !== 'number' || this.originalPrice < this.price) {
+        this.originalPrice = this.price;
+      }
+      // Recalculate discount if necessary
+      if (this.originalPrice > 0) {
+        const discount = Math.round(((this.originalPrice - this.price) / this.originalPrice) * 100);
+        this.discount = Math.max(0, Math.min(100, discount));
+      }
+    }
+  }
+
   next();
 });
 
